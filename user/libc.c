@@ -35,6 +35,10 @@ int fork(){
   return r;
 }
 
+void exit(){
+  asm volatile( "svc #3     \n");
+}
+
 void writeNumb( int numb ) {
 	int size_numb = 0, reverse = 0, digit   = 0;
 
