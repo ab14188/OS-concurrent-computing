@@ -20,11 +20,11 @@ void P1() {
       for( uint32_t y = ( 1 << 4 ); y < ( 1 << 8 ); y++ ) {
         uint32_t r = gcd( x, y );  // printf( "gcd( %d, %d ) = %d\n", x, y, r );
         write(0, "gcd( ", 5);
-        writeNumb(x);
+        write_numb(x);
         write(0, ", ", 2);
-        writeNumb(y);
+        write_numb(y);
         write(0, " ) = ", 6);
-        writeNumb(r);
+        write_numb(r);
         write(0, "\n", 1); 
       }
     }

@@ -17,9 +17,9 @@ void P2() {
     for( uint32_t x = ( 1 << 8 ); x < ( 1 << 24 ); x++ ) {
       uint32_t r = weight( x );  // printf( "weight( %d ) = %d\n", x, r );
       write(0, "weight( ", 8);
-      writeNumb(x);
+      write_numb(x);
       write(0, " ) = ", 6);
-      writeNumb(r);
+      write_numb(r);
       write(0, "\n", 1);  
     }
   }

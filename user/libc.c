@@ -39,7 +39,7 @@ void exit(){
   asm volatile( "svc #3     \n");
 }
 
-void writeNumb( int numb ) {
+void write_numb( int numb ) {
 	int size_numb = 0, reverse = 0, digit   = 0;
 
   	if (numb == 0) size_numb = 1;
@@ -52,11 +52,11 @@ void writeNumb( int numb ) {
   	for (int i = 0; i < size_numb; i++){
     	digit      = reverse % 10;
     	reverse   /= 10;
-    	numbToChar(digit);
+    	numb_to_char(digit);
   	}
 }
 
-void numbToChar( int numb ) { 
+void numb_to_char( int numb ) { 
   char* x = "0";
   switch (numb) {
     case 0 : x = "0"; break;

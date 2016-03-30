@@ -6,7 +6,7 @@
 
 #include "libc.h"
 
-extern void (*entry_terminal)(); 
+extern void ( *entry_terminal )(); 
 extern uint32_t tos_terminal;
 
 #endif
