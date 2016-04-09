@@ -6,7 +6,7 @@ void age_process();
 int pcbs_info();
 void create_child_pcb( pid_t pid, pid_t ppid, ctx_t* ctx );
 
-int create_pcb( uint32_t pc, uint32_t sp, int priority); // might need to add the priority in here 
+int create_pcb( uint32_t pc, uint32_t sp, int priority); 
 int get_numb_live_pcb();
 
 pid_t get_slot( pid_t ppid );
@@ -160,39 +160,18 @@ void set_timer(){
   	GICD0->CTLR            = 0x00000001; // enable GIC distributor
 }
 
-// Scheduler : given // round robin ? or the simple predefined one I dont know
-// void scheduler( ctx_t* ctx 			){
-// 	if      ( current == &pcb[ 0 ] ) {
-//     	memcpy( &pcb[ 0 ].ctx, ctx, sizeof( ctx_t ) );
-//     	memcpy( ctx, &pcb[ 1 ].ctx, sizeof( ctx_t ) );
-//     	current = &pcb[ 1 ];
-//   	}
-//   	else if ( current == &pcb[ 1 ] ) {
-//     	memcpy( &pcb[ 1 ].ctx, ctx, sizeof( ctx_t ) );
-//     	memcpy( ctx, &pcb[ 2 ].ctx, sizeof( ctx_t ) );
-//     	current = &pcb[ 2 ];
-//   	}
-//   	else if ( current == &pcb[ 2 ] ) {
-//    		memcpy( &pcb[ 2 ].ctx, ctx, sizeof( ctx_t ) );
-//     	memcpy( ctx, &pcb[ 0 ].ctx, sizeof( ctx_t ) );
-//     	current = &pcb[ 0 ];
-//   	}
-// }
-
-// Scheduler : priority -- this should give priority to the one with the highest priority 
-// there is a problem with this for now there is definitely some sort of pb 
-// should not give control back to the parent should it ?
-// have a case for when you finish a program 
 
 
+
+// Scheduler : priority based
 void scheduler( ctx_t* ctx 			){
 	int best = -1;
 
-	for ( int i = 0; i < 7 ; i++ ) { // up to the possible number of processes -- need some sort of thing to determin wether or not should pass control 
+	for ( int i = 0; i < 7 ; i++ ) {  
 		if ( pcb[ i ].priority > best /*&& i != current -> pid*/ ) best = i;
 	}
 
-	if ( best > (-1) ) { // there is no point in passing ctrl to the same pcb
+	if ( best > (-1) ) { 
 		memcpy( &pcb[ current -> pid ].ctx, ctx, sizeof( ctx_t ) );
      	memcpy( ctx, &pcb[ best ].ctx, sizeof( ctx_t ) );
      	current = &pcb[ best ];
@@ -257,6 +236,7 @@ int get_numb_live_pcb(){
 	return livePcb;
 }
 
+// Function that ages the current pcb
 void age_process(){
 	int pid = current -> pid;
 
@@ -265,6 +245,8 @@ void age_process(){
 	}
 }
 
+
+// Function that gets pcbs info 
 int pcbs_info(){
 	int pcbs = 0;
 	for (int i = 0; i < total_pcb ; i++){
