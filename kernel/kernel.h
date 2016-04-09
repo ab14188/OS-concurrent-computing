@@ -12,6 +12,7 @@
 
 // Include functionality from newlib, the embedded standard C library.
 #include <string.h>	
+#include <stdlib.h>
 
 //Include definitions relating to the 3 user Programs and the user terminal
 #include "P0.h"

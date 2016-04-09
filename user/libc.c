@@ -39,6 +39,25 @@ void exit(){
   asm volatile( "svc #3     \n");
 }
 
+int exec( int pid){
+  int r;
+  asm volatile( "mov r0, %1 \n"
+                "svc #4     \n"
+                "mov %0, r0 \n"
+                : "=r" (r)
+                : "r" (pid)
+                : "r0");
+  return r;
+}
+
+int get_info(){
+  int r;
+  asm volatile( "svc #5     \n"
+                "mov %0, r0 \n"
+                : "=r" (r));
+  return r;
+}
+
 void write_numb( int numb ) {
 	int size_numb = 0, reverse = 0, digit   = 0;
 

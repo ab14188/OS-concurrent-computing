@@ -2,33 +2,37 @@
 
 void set_timer();
 void scheduler( ctx_t* ctx 			);
+void age_process();
+int pcbs_info();
 void create_child_pcb( pid_t pid, pid_t ppid, ctx_t* ctx );
-void create_pcb( pid_t pid, uint32_t pc, uint32_t sp); // might need to add the priority in here 
+
+int create_pcb( uint32_t pc, uint32_t sp, int priority); // might need to add the priority in here 
 int get_numb_live_pcb();
 
 pid_t get_slot( pid_t ppid );
 
+int total_pcb 	= 8;
+int age_Time 	= 0;
+int max_Age     = 3;
+
 pcb_t pcb[ 8 ], *current = NULL;
-int total_pcb = 8;
+
 
 void kernel_handler_rst( ctx_t* ctx 		){
 	set_timer();
 	irq_enable();
 
-	create_pcb(0, ( uint32_t ) entry_P0, ( uint32_t ) &tos_P0);
-	create_pcb(1, ( uint32_t ) entry_P1, ( uint32_t ) &tos_P1);
-	create_pcb(2, ( uint32_t ) entry_P2, ( uint32_t ) &tos_P2);
-	create_pcb(3, ( uint32_t ) entry_terminal, ( uint32_t ) &tos_terminal);
-	
-  	// Set the priorities of unused to -1:
-  	for ( int i = 4; i < 8; i++ ) {
+  	// Blank every process and set the priorities of to -1:
+  	for ( int i = 0; i < 8; i++ ) {
   		memset( &pcb[ i ], 0, sizeof( pcb_t ) );
   		pcb[ i ].priority = -1;
   	}
 
+	// Creating terminal process
+	pid_t pid = create_pcb(( uint32_t ) entry_terminal, ( uint32_t ) &tos_terminal, 0);
+	
   	// Set the start Point:
-  	current = &pcb[ 3 ]; memcpy( ctx, &current->ctx, sizeof( ctx_t ) );
-
+  	current = &pcb[ pid ]; memcpy( ctx, &current->ctx, sizeof( ctx_t ) );
   	return; 
 }
 
@@ -48,7 +52,6 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
       		break;
 		}
 		case 0x01 :{ // int read ( *buffer ) 
-			//irq_unable();
 			char*  buffer = ( char* )( ctx->gpr[ 0 ] );
       		int index     = 0;
       		int broken    = 1;
@@ -61,28 +64,16 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
       		}
 
       		ctx -> gpr[ 0 ] = index - 1; 
-
-      		//irq_enable();
-      		//TIMER0 -> Timer1IntClr = 0x01;
       		break;
 		}
 		case 0x02 :{ // int fork () 
-			// disable the timer
-			//irq_unable();
-
 			pid_t ppid 	= current -> pid;
 			pid_t cpid 	= get_slot( ppid );
 			int error 	= 0;
 
 			if ( cpid != -1) {
 				create_child_pcb( cpid, ppid, ctx );
-				scheduler( ctx );
-				// Pass ctrl to the child
-        		// memcpy( &pcb[ cpid ].ctx, ctx, sizeof(ctx_t));
-        		// memcpy(&pcb[ ppid ].ctx, ctx, sizeof( ctx_t ) );      		
-        		// memcpy( ctx, &pcb[ cpid ].ctx, sizeof( ctx_t ) );
-        		// current = &pcb[ cpid ];
-			
+				//scheduler( ctx );		
 			}else {
 				char *x = "ERROR -- error executing fork --\n      -- 2 many child process ? -- \n";
         			for( int i = 0; i < strlen(x); i++ ) {
@@ -90,28 +81,36 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
         		}
         		error = -1;
 			}
-			
-			//As I always give control to the child when I fork -- different to POSIX -- this should always return 0 and -1 if error
+		
 			if ( error == -1 ) ctx -> gpr[ 0 ] = -1;
-			else ctx -> gpr[ 0 ] = 0; 
+			else ctx -> gpr[ 0 ] = cpid; 
 			break;
 		}
 		case 0x03 :{ // int exit ()
 			pid_t pid 	= current -> pid;
-			pid_t ppid 	= pcb[ pid ].priority; 
 
-			memcpy( &pcb[ pid ].ctx, ctx, sizeof( ctx_t ) );
-     		memcpy( ctx, &pcb[ ppid ].ctx, sizeof( ctx_t ) );
-			
 			memset (&pcb[ pid ], 0, sizeof(pcb_t));
 			pcb[ pid ].priority = -1;
-     		
-     		current = &pcb[ ppid ];
-     		ctx -> gpr[ 0 ] = pid; // returns the pid of the child process terminated this is kind of like a mix between wait and exit  
-			
-			//setting back the timer 
-			//irq_enable();
-			//TIMER0 -> Timer1IntClr = 0x01;
+
+     		// reset the stack ? -- how do you do this 
+     		//memcpy (&pcb[ pid ].ctx.sp, ctx->sp, );
+
+
+     		//memset (&pcb[ pid ].ctx, 0, sizeof(ctx_t));
+     		ctx -> gpr[ 0 ] = -1; // returns -1 to say that it is dead  
+     		scheduler( ctx );
+			break;
+		}
+		case 0x04 :{ // int exec ( int pid )
+			int pid = ( int ) (ctx -> gpr[0]) ;
+			//memcpy( &pcb[ pid ].ctx, ctx, sizeof(ctx_t));
+			scheduler( ctx );
+			ctx -> gpr[0] = 0;
+			break;
+		}
+		case 0x05:{ // int get_info()
+			int pcbs = pcbs_info();
+			ctx -> gpr[0] = pcbs;
 			break;
 		}
 		default	:{
@@ -133,6 +132,14 @@ void kernel_handler_irq( ctx_t* ctx 		){
 	// Handle interrupt then reset Timer
 	if ( id == GIC_SOURCE_TIMER0 ) {
 		TIMER0 -> Timer1IntClr = 0x01;
+		
+		age_Time +=1 ;
+		
+		if ( age_Time >= max_Age ) {
+			age_process();
+			age_Time = 0;
+		} 
+
 		scheduler( ctx ); 
 	}
 
@@ -176,6 +183,8 @@ void set_timer(){
 // there is a problem with this for now there is definitely some sort of pb 
 // should not give control back to the parent should it ?
 // have a case for when you finish a program 
+
+
 void scheduler( ctx_t* ctx 			){
 	int best = -1;
 
@@ -183,7 +192,7 @@ void scheduler( ctx_t* ctx 			){
 		if ( pcb[ i ].priority > best /*&& i != current -> pid*/ ) best = i;
 	}
 
-	if ( best >= 0 && best != current -> pid ) { // there is no point in passing ctrl to the same pcb
+	if ( best > (-1) ) { // there is no point in passing ctrl to the same pcb
 		memcpy( &pcb[ current -> pid ].ctx, ctx, sizeof( ctx_t ) );
      	memcpy( ctx, &pcb[ best ].ctx, sizeof( ctx_t ) );
      	current = &pcb[ best ];
@@ -192,9 +201,9 @@ void scheduler( ctx_t* ctx 			){
 
 
 // Get empty slot for the new Child process 
-pid_t get_slot( pid_t ppid) {
+pid_t get_slot( pid_t ppid ) {
 	pid_t cpid 	= -1;
-	int i 		= 4;
+	int i 		= 0;
 
 	while ( i < 8 ){
 		if ( pcb[ i ].priority == (-1) ) {
@@ -209,14 +218,17 @@ pid_t get_slot( pid_t ppid) {
 }
 
 // Create new Process  
-void create_pcb( pid_t pid, uint32_t pc, uint32_t sp ){
+pid_t create_pcb( uint32_t pc, uint32_t sp, int priority){
+	pid_t pid = get_slot( 0 );
 
 	memset( &pcb[ pid ], 0, sizeof( pcb_t ) );
   	pcb[ pid ].pid      = pid;
-  	pcb[ pid ].priority = pid;
+  	pcb[ pid ].priority = priority;
   	pcb[ pid ].ctx.cpsr = 0x50;
   	pcb[ pid ].ctx.pc   = ( uint32_t )( pc );
-  	pcb[ pid ].ctx.sp   = ( uint32_t )(  sp );
+  	pcb[ pid ].ctx.sp   = ( uint32_t )( sp );
+
+  	return pid;
 }
 
 // Create new Process -- copy parent data into child data
@@ -225,7 +237,7 @@ void create_child_pcb( pid_t pid, pid_t ppid, ctx_t* ctx ){
    	memset (&pcb[ pid ], 0, sizeof(pcb_t));
 
    	// Copying parent pcb
-   	pcb[ pid ].priority = get_numb_live_pcb() + 1;//ppid; // might need to change how the priority works here 
+   	pcb[ pid ].priority = get_numb_live_pcb(); 
    	pcb[ pid ].pid      = pid;
    	pcb[ pid ].ctx.pc   = pcb[ ppid ].ctx.pc;
    	pcb[ pid ].ctx.cpsr = pcb[ ppid ].ctx.cpsr;
@@ -243,4 +255,22 @@ int get_numb_live_pcb(){
 	}
 
 	return livePcb;
+}
+
+void age_process(){
+	int pid = current -> pid;
+
+	if ( pcb[ pid ].priority != (-1) && pcb[ pid ].priority > 0 ){
+		pcb[ pid ].priority -= 1;
+	}
+}
+
+int pcbs_info(){
+	int pcbs = 0;
+	for (int i = 0; i < total_pcb ; i++){
+		if ( pcb[ i ].ctx.sp != 0){
+			pcbs ++;
+		}
+	}
+	return pcbs;
 }

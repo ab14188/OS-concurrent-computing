@@ -9,4 +9,6 @@
 extern void (*entry_P0)(); 
 extern uint32_t tos_P0;
 
+void P0();
+
 #endif

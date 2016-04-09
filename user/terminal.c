@@ -1,7 +1,7 @@
 #include "terminal.h"
 
 int extract_command( char* command, char* buffer ){
-  while (*buffer != '\r') {
+  while (*buffer != '\r' && *command != '\r') {
     if (*buffer != *command) return -1;
     buffer++, command++;
   }
@@ -13,37 +13,62 @@ void execute( char* buffer ){
 
   if ( extract_command("run p0\r", buffer) == 1 ){ 
     int pid     = fork();    
-    if ( pid == 0 ) {   
+    if ( pid == 0 ) { // Case in Child process
       P0();
       exit();
     }
-    else { //error
-      return;
+    else if ( pid > 0 ){ // Case in Parent process
+      exec( pid );  
     } 
+    else 
+      return;
   }
   else if ( extract_command("run p1\r", buffer) == 1 ){
     int pid     = fork();
-    if ( pid == 0 ) { 
+
+    if ( pid == 0 ) { // Case in Child process
       P1();
       exit();
+    }
+    else if ( pid > 0 ){ // Case in Parent process
+      exec( pid );  
     } 
-    else { // error 
+    else 
       return;
-    } 
   }
   else if ( extract_command("run p2\r", buffer) == 1 ){
-    int pid     = fork();
-    if ( pid == 0 ) { 
+    int pid     = fork();  
+
+    if ( pid == 0 ) { // Case in Child process
       P2();
       exit();
+    }
+    else if ( pid > 0 ){ // Case in Parent process
+      exec( pid );  
     } 
-    else { // error
+    else 
       return;
-    } 
+  }
+  else if ( extract_command("run p0 &\r", buffer) == 1 ){
+    int pid = fork();
+    return ;
+  }
+  else if ( extract_command("run p1 &\r", buffer) == 1 ){
+    int pid = fork();
+    return ;
+  }
+  else if ( extract_command("run p2 &\r", buffer) == 1 ){
+    int pid = fork();
+    return ;
+  }
+  else if ( extract_command("/proc\r", buffer) == 1 ){
+    int pcbs = get_info();
+    write(0, "Number of existing pcbs: ", 26);
+    write_numb( pcbs );
+    write(0, "\n", 1);
   }
   else if ( extract_command(":q\r", buffer) == 1 || extract_command("quit\r", buffer) == 1 ){
-    //exit();
-    //kill all processes 
+    //exit();  
   }
   else write(0, "ERROR -- command does not exist --\n", 36);
   
@@ -85,5 +110,3 @@ void ( *entry_terminal )() = &terminal;
 // copy the stack when forking to a child process
 // might need to change the fork style into 2 different things : exec and fork instead of having both of them together that way fork can return what it really must ie cpid and 0 
 // start looking at disks and so on
-
-
