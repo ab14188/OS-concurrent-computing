@@ -75,8 +75,8 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 				create_child_pcb( cpid, ppid, ctx );
 				//scheduler( ctx );		
 			}else {
-				char *x = "ERROR -- error executing fork --\n      -- 2 many child process ? -- \n";
-        			for( int i = 0; i < strlen(x); i++ ) {
+				char *x = "ERROR -- error executing fork -- 2 many child process ? -- \n";
+        			for( int i = 0; i < 60; i++ ) {
           			PL011_putc( UART0, *x++ );
         		}
         		error = -1;
@@ -206,7 +206,7 @@ pid_t get_slot( pid_t ppid ) {
 	int i 		= 0;
 
 	while ( i < 8 ){
-		if ( pcb[ i ].priority == (-1) ) {
+		if ( pcb[ i ].priority == (-1) && pcb[ i ].pid == 0) {
 			pcb[ i ].priority 	= ppid;
 			cpid 				= i; 
 			i 					= 8;
