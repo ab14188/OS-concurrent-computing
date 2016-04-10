@@ -23,7 +23,7 @@ void kernel_handler_rst( ctx_t* ctx 		){
 	irq_enable();
 
   	// Blank every process and set the priorities of to -1:
-  	for ( int i = 0; i < 8; i++ ) {
+  	for ( int i = 0; i < total_pcb; i++ ) {
   		memset( &pcb[ i ], 0, sizeof( pcb_t ) );
   		pcb[ i ].priority = -1;
   	}
@@ -72,10 +72,9 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 			int error 	= 0;
 
 			if ( cpid != -1) {
-				create_child_pcb( cpid, ppid, ctx );
-				//scheduler( ctx );		
+				create_child_pcb( cpid, ppid, ctx );	
 			}else {
-				char *x = "ERROR -- error executing fork -- 2 many child process ? -- \n";
+				char *x = "ERROR -- error executing fork -- 2 many child process ? -- ";
         			for( int i = 0; i < 60; i++ ) {
           			PL011_putc( UART0, *x++ );
         		}
@@ -184,11 +183,11 @@ pid_t get_slot( pid_t ppid ) {
 	pid_t cpid 	= -1;
 	int i 		= 0;
 
-	while ( i < 8 ){
+	while ( i < total_pcb ){
 		if ( pcb[ i ].priority == (-1) && pcb[ i ].pid == 0) {
 			pcb[ i ].priority 	= ppid;
 			cpid 				= i; 
-			i 					= 8;
+			i 					= total_pcb;
 		}
 		i++;
 	}
@@ -249,10 +248,12 @@ void age_process(){
 // Function that gets pcbs info 
 int pcbs_info(){
 	int pcbs = 0;
+
 	for (int i = 0; i < total_pcb ; i++){
 		if ( pcb[ i ].ctx.sp != 0){
 			pcbs ++;
 		}
 	}
+	
 	return pcbs;
 }

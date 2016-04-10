@@ -3,11 +3,11 @@
 int extract_command( char* command, char* buffer ){
   if (buffer[0] == '\r') return -1;
   
-  while (*buffer != '\r' && *command != '\r') {
+  while (*command != '\r' ) {
     if (*buffer != *command) return -1;
     buffer++, command++;
   }
-  
+
   return 1;
 }
 
@@ -23,8 +23,7 @@ void execute( char* buffer ){
     else if ( pid > 0 ){ // Case in Parent process
       exec( pid );  
     } 
-    else 
-      return;
+    else return;
   }
   else if ( extract_command("run p1\r", buffer) == 1 ){
     int pid     = fork();
@@ -36,8 +35,7 @@ void execute( char* buffer ){
     else if ( pid > 0 ){ // Case in Parent process
       exec( pid );  
     } 
-    else 
-      return;
+    else return;
   }
   else if ( extract_command("run p2\r", buffer) == 1 ){
     int pid     = fork();  
@@ -49,8 +47,19 @@ void execute( char* buffer ){
     else if ( pid > 0 ){ // Case in Parent process
       exec( pid );  
     } 
-    else 
-      return;
+    else return;
+  }
+  else if ( extract_command("walk\r", buffer) == 1 ){
+    int pid     = fork();  
+
+    if ( pid == 0 ) { // Case in Child process
+      walking();
+      exit();
+    }
+    else if ( pid > 0 ){ // Case in Parent process
+      exec( pid );  
+    } 
+    else return;
   }
   else if ( extract_command("run p0 &\r", buffer) == 1 ){
     int pid = fork();
@@ -67,14 +76,13 @@ void execute( char* buffer ){
   else if ( extract_command("/proc\r", buffer) == 1 ){
     int pcbs = get_info();
     
-    write(0, "Number of existing pcbs: ", 26);
+    write(0, "Number of existing pcbs: ", 25);
     write_numb( pcbs );
-    write(0, "\n", 1);
   }
   else if ( extract_command(":q\r", buffer) == 1 || extract_command("quit\r", buffer) == 1 ){
     //exit();  
   }
-  else write(0, "ERROR -- command does not exist --\n", 36);
+  else write(0, "ERROR -- command does not exist --", 35);
   
   return;
 }
@@ -82,12 +90,13 @@ void execute( char* buffer ){
 
 void terminal() {
   char buffer[ 101 ]; 
-  
+  int i = 0;
   while (1){
-    write( 0, "terminal$ ", 10);
+    if ( i == 0 ) write( 0, "terminal$ ", 10);
+    else write( 0, "\nterminal$ ", 11);
     read( buffer );
-    write (0, "\n", 1);
     execute( buffer );
+    i ++;
   }
 
   return;
