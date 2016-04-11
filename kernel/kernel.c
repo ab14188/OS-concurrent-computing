@@ -1,37 +1,32 @@
 #include "kernel.h"
 
-void set_timer	();
-void age_process();
-void clean_ipc_t();
-void scheduler ( ctx_t* ctx 			);
-void write_error( char* error_msg, int size);
-void create_child_pcb( pid_t pid, pid_t ppid, ctx_t* ctx );
+void 	init_timer	(); 											// initialise the timer
+void 	init_ipcs_pcbs(); 											// initialise the space reserved for pcbs and ipcs
+void 	age_process(); 												// age current process
+void 	scheduler ( ctx_t* ctx 			); 							// priority scheduler
+void 	write_error( char* error_msg, int size); 					// write error msg
 
-int pcbs_info();
-int create_ipc();
-int get_ipc_slot();
-int get_numb_live_pcb();
-int create_pcb( uint32_t pc, uint32_t sp, int priority); 
+int 	pcbs_info(); 												// get pcbs information
+int 	get_numb_live_pcb(); 										// get number of used pcbs
+int 	get_ipc_slot(); 											// get an empty slot for ipc
+pid_t 	get_pcb_slot( pid_t ppid ); 								// get slot for new pcb
+int 	create_ipc(); 												// create ipc
+int 	create_pcb( uint32_t pc, uint32_t sp, int priority); 		// create pcb 
+void 	create_child_pcb( pid_t pid, pid_t ppid, ctx_t* ctx ); 		// create child pcb 
 
-pid_t get_slot( pid_t ppid );
-
-int total_pcb 	= 8;
-int age_Time 	= 0;
-int max_Age     = 3;
+int total_pcb 	= 8;                                                // number of pcbs
+int age_Time 	= 0;												// age of current process
+int max_Age     = 3;												// max age a process can get 2
 
 pcb_t pcb[ 8 ], *current = NULL;
 ipc_t ipc[ 8 ];
 
-void kernel_handler_rst( ctx_t* ctx 		){
-	set_timer();
-	irq_enable();
-	clean_ipc_t();
 
-  	// Blank every process and set the priorities of to -1:
-  	for ( int i = 0; i < total_pcb; i++ ) {
-  		memset( &pcb[ i ], 0, sizeof( pcb_t ) );
-  		pcb[ i ].priority = -1;
-  	}
+void kernel_handler_rst( ctx_t* ctx 		){
+	init_timer();
+	irq_enable();
+	
+	init_ipcs_pcbs();
 
 	// Creating terminal process
 	pid_t pid = create_pcb(( uint32_t ) entry_terminal, ( uint32_t ) &tos_terminal, 0);
@@ -73,7 +68,7 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 		}
 		case 0x02 :{ // int fork () 
 			pid_t ppid 	= current -> pid;
-			pid_t cpid 	= get_slot( ppid );
+			pid_t cpid 	= get_pcb_slot( ppid );
 			int error 	= 0;
 
 			if ( cpid != -1) {
@@ -159,7 +154,8 @@ void kernel_handler_irq( ctx_t* ctx 		){
 	GICC0 -> EOIR = id;
 }
 
-void set_timer(){
+// Initialise timer
+void init_timer(){
 	TIMER0->Timer1Load     = 0x00010000; // select period = 2^20 ticks ~= 1 sec // change the 1 to 2 => 2sec -- you can make this much faster and much slower
   	TIMER0->Timer1Ctrl     = 0x00000002; // select 32-bit   timer
   	TIMER0->Timer1Ctrl    |= 0x00000040; // select periodic timer
@@ -192,7 +188,7 @@ void scheduler( ctx_t* ctx 			){
 
 
 // Get empty slot for the new Child process 
-pid_t get_slot( pid_t ppid ) {
+pid_t get_pcb_slot( pid_t ppid ) {
 	pid_t cpid 	= -1;
 	int i 		= 0;
 
@@ -210,7 +206,7 @@ pid_t get_slot( pid_t ppid ) {
 
 // Create new Process  
 pid_t create_pcb( uint32_t pc, uint32_t sp, int priority){
-	pid_t pid = get_slot( 0 );
+	pid_t pid = get_pcb_slot( 0 );
 
 	memset( &pcb[ pid ], 0, sizeof( pcb_t ) );
   	pcb[ pid ].pid      = pid;
@@ -248,7 +244,7 @@ int get_numb_live_pcb(){
 	return livePcb;
 }
 
-// Function that ages the current pcb
+// Age the current pcb
 void age_process(){
 	int pid = current -> pid;
 
@@ -258,7 +254,7 @@ void age_process(){
 }
 
 
-// Function that gets pcbs info 
+// Get information on pcbs
 int pcbs_info(){
 	int pcbs = 0;
 
@@ -271,12 +267,22 @@ int pcbs_info(){
 	return pcbs;
 }
 
-void clean_ipc_t(){
+// Initialise the space reserved for ipcs and pcbs
+void init_ipcs_pcbs(){
+	// Blank every ipcs
 	for ( int i = 0; i < 8; i++ ){
 		memset( &ipc[ i ], -1, sizeof( ipc ) ); 
 	}
+
+	// Blank every process and set the priorities of to -1:
+  	for ( int i = 0; i < total_pcb; i++ ) {
+  		memset( &pcb[ i ], 0, sizeof( pcb_t ) );
+  		pcb[ i ].priority = -1;
+  	}
 }
 
+
+// Get empty slot for channel between 2 pcbs
 int get_ipc_slot(){
 	for ( int i = 0; i < 8; i++ ){
 		if ( ipc[ i ].chan_end == -1 ) return i;
@@ -285,6 +291,7 @@ int get_ipc_slot(){
 	return -1;
 }
 
+// Create channel between 2 pcbs
 int create_ipc(int chan_start, int chan_end){
 	int id 					= get_ipc_slot();
 	
@@ -296,6 +303,7 @@ int create_ipc(int chan_start, int chan_end){
 	return id;
 }
 
+// Write error msg 
 void write_error(char* error_msg, int size){
 	char *error = "ERROR ";
 
