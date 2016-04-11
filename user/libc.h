@@ -17,6 +17,6 @@ int exec( int pid );
 void P0();
 void P1();
 void P2();
-void walking();	
+void walk();	
 
 #endif

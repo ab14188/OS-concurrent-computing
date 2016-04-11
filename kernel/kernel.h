@@ -18,7 +18,7 @@
 #include "P0.h"
 #include "P1.h"
 #include "P2.h"
-#include "walking.h"
+#include "walk.h"
 #include "Philosophers.h"
 #include "terminal.h"
 

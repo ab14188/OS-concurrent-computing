@@ -55,7 +55,7 @@ void execute( char* buffer ){
     int pid     = fork();  
 
     if ( pid == 0 ) { // Case in Child process
-      walking();
+      walk();
       exit();
     }
     else if ( pid > 0 ){ // Case in Parent process
