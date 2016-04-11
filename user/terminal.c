@@ -4,8 +4,8 @@ int extract_command( char* command, char* buffer ){
   if (buffer[0] == '\r') return -1;
   
   while (*buffer != '\r') {
-    if (*command == '\0' ) return -1;
-    if (*buffer != *command) return -1;
+    if (*command == '\0' )    return -1;
+    if (*buffer != *command)  return -1;
     buffer++;
     command++;
   }
