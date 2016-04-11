@@ -3,9 +3,11 @@
 int extract_command( char* command, char* buffer ){
   if (buffer[0] == '\r') return -1;
   
-  while (*command != '\r' ) {
+  while (*buffer != '\r') {
+    if (*command == '\0' ) return -1;
     if (*buffer != *command) return -1;
-    buffer++, command++;
+    buffer++;
+    command++;
   }
 
   return 1;
@@ -49,7 +51,7 @@ void execute( char* buffer ){
     } 
     else return;
   }
-  else if ( extract_command("walk\r", buffer) == 1 ){
+  else if ( extract_command("run walk\r", buffer) == 1 ){
     int pid     = fork();  
 
     if ( pid == 0 ) { // Case in Child process

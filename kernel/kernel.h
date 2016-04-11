@@ -18,6 +18,8 @@
 #include "P0.h"
 #include "P1.h"
 #include "P2.h"
+#include "walking.h"
+#include "DiningPhilosophers.h"
 #include "terminal.h"
 
 typedef struct {

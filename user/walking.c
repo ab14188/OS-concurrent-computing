@@ -2,7 +2,7 @@
 
 void walking() {
 
-  for (int i = 0; i < 20; i++){
+  for (int i = 0; i < 64; i++){
     write_numb(i);
     write(0, " kilomètre à pied ça use, ça use, \n", 40);
     write_numb(i);
