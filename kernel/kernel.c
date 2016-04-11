@@ -1,13 +1,17 @@
 #include "kernel.h"
 
-void set_timer();
-void scheduler( ctx_t* ctx 			);
+void set_timer	();
 void age_process();
-int pcbs_info();
+void clean_ipc_t();
+void scheduler ( ctx_t* ctx 			);
+void write_error( char* error_msg, int size);
 void create_child_pcb( pid_t pid, pid_t ppid, ctx_t* ctx );
 
-int create_pcb( uint32_t pc, uint32_t sp, int priority); 
+int pcbs_info();
+int create_ipc();
+int get_ipc_slot();
 int get_numb_live_pcb();
+int create_pcb( uint32_t pc, uint32_t sp, int priority); 
 
 pid_t get_slot( pid_t ppid );
 
@@ -16,11 +20,12 @@ int age_Time 	= 0;
 int max_Age     = 3;
 
 pcb_t pcb[ 8 ], *current = NULL;
-
+ipc_t ipc[ 8 ];
 
 void kernel_handler_rst( ctx_t* ctx 		){
 	set_timer();
 	irq_enable();
+	clean_ipc_t();
 
   	// Blank every process and set the priorities of to -1:
   	for ( int i = 0; i < total_pcb; i++ ) {
@@ -74,10 +79,8 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 			if ( cpid != -1) {
 				create_child_pcb( cpid, ppid, ctx );	
 			}else {
-				char *x = "ERROR -- error executing fork -- 2 many child process ? -- ";
-        			for( int i = 0; i < 60; i++ ) {
-          			PL011_putc( UART0, *x++ );
-        		}
+				char *error_msg  = "-- error executing fork -- 2 many child process ? -- ";
+				write_error( error_msg, 54);
         		error = -1;
 			}
 		
@@ -107,17 +110,27 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 			ctx -> gpr[0] = 0;
 			break;
 		}
-		case 0x05:{ // int get_info()
+		case 0x05 :{ // int get_info()
 			int pcbs = pcbs_info();
 			ctx -> gpr[0] = pcbs;
 			break;
 		}
-		default	:{
-			char* error = "ERROR\n";
-			for ( int i = 0; i < 6; i++) {
-				PL011_putc( UART0, *error++ );
-			}
+		case 0x06 :{ // int create_channel( int chan_start, int chan_end);
+			int chan_start 	= ( int )(ctx -> gpr[0]);
+			int chan_end 	= ( int )(ctx -> gpr[1]);
+			int ipc_id 		= create_ipc(chan_start, chan_end);
 
+			if ( ipc_id == -1){
+				char* error_msg = " -- creating channel --";
+				write_error( error_msg, 24);
+			} 
+
+			ctx -> gpr[0] = ipc_id;
+			break;
+		}
+		default	:{
+			char* error_msg = " -- kernel oops -- ";
+			write_error( error_msg, 20);
 			break;
 		}
 	}
@@ -256,4 +269,40 @@ int pcbs_info(){
 	}
 	
 	return pcbs;
+}
+
+void clean_ipc_t(){
+	for ( int i = 0; i < 8; i++ ){
+		memset( &ipc[ i ], -1, sizeof( ipc ) ); 
+	}
+}
+
+int get_ipc_slot(){
+	for ( int i = 0; i < 8; i++ ){
+		if ( ipc[ i ].chan_end == -1 ) return i;
+	}
+
+	return -1;
+}
+
+int create_ipc(int chan_start, int chan_end){
+	int id 					= get_ipc_slot();
+	
+	if ( id != -1 ){
+		ipc[ id ].chan_start 	= chan_start;
+		ipc[ id ].chan_end 	 	= chan_end;
+	}
+
+	return id;
+}
+
+void write_error(char* error_msg, int size){
+	char *error = "ERROR ";
+
+	for( int i = 0; i < 6; i++ ) {
+			PL011_putc( UART0, *error++ );
+	}
+	for( int i = 0; i < size; i++ ) {
+			PL011_putc( UART0, *error_msg++ );
+	}
 }

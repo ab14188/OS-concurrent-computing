@@ -62,7 +62,7 @@ void execute( char* buffer ){
       exec( pid );  
     } 
     else return;
-  }
+  } // for theses i would need to age the process to a maximum hence just priority to -1 such that it never goes to it.. 
   else if ( extract_command("run p0 &\r", buffer) == 1 ){
     int pid = fork();
     return ;
@@ -72,6 +72,10 @@ void execute( char* buffer ){
     return ;
   }
   else if ( extract_command("run p2 &\r", buffer) == 1 ){
+    int pid = fork();
+    return ;
+  }
+  else if ( extract_command("run walk &\r", buffer) == 1 ){
     int pid = fork();
     return ;
   }

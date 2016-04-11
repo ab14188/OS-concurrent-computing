@@ -19,7 +19,7 @@
 #include "P1.h"
 #include "P2.h"
 #include "walking.h"
-#include "DiningPhilosophers.h"
+#include "Philosophers.h"
 #include "terminal.h"
 
 typedef struct {
@@ -34,5 +34,15 @@ typedef struct {
   ctx_t ctx;
 } pcb_t;
 
+/* IPC structure: 
+* channel 0: write_from
+* channel 1: read_from
+* chanstart and chanend: the pcbs that are linked
+*/
+typedef struct {
+	void* channels[2];
+	pid_t chan_start; 
+	pid_t chan_end;
+} ipc_t;
 
 #endif

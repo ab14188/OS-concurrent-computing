@@ -35,10 +35,12 @@ int fork(){
   return r;
 }
 
+// Exit current process
 void exit(){
   asm volatile( "svc #3     \n");
 }
 
+// Execute process
 int exec( int pid){
   int r;
   asm volatile( "mov r0, %1 \n"
@@ -50,6 +52,7 @@ int exec( int pid){
   return r;
 }
 
+// Get general information
 int get_info(){
   int r;
   asm volatile( "svc #5     \n"
@@ -57,6 +60,20 @@ int get_info(){
                 : "=r" (r));
   return r;
 }
+
+// Create a channel
+int create_channel( int chan_start, int chan_end) {
+  int r;
+  asm volatile( "mov r0, %1 \n"
+                "mov r1, %2 \n"
+                "svc #6     \n"
+                "mov %0, r0 \n" 
+              : "=r" (r) 
+              : "r" (chan_start), "r" (chan_end) 
+              : "r0", "r1");
+  return r;
+}
+
 
 void write_numb( int numb ) {
 	int size_numb = 0, reverse = 0, digit   = 0;

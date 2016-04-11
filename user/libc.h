@@ -11,6 +11,7 @@ int fork();
 void exit();
 void write_numb( int numb );
 void numb_to_char( int numb );
+int create_channel();
 int get_info();
 int exec( int pid );
 void P0();

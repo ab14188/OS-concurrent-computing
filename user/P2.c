@@ -11,7 +11,7 @@ uint32_t weight( uint32_t x ) {
 }
 
 void P2() {
-  //while( 1 ) {
+  while( 1 ) {
     // compute the Hamming weight of each x for 2^8 < x < 2^24
 
     for( uint32_t x = ( 1 << 8 ); x < ( 1 << 24 ); x++ ) {
@@ -22,7 +22,7 @@ void P2() {
       write_numb(r);
       write(0, "\n", 1);  
     }
-  //}
+  }
 
   return;
 }
