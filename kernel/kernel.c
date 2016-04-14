@@ -174,29 +174,37 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 				case 0x01:{
 					init_timer1_1( sleep_time );
 					irq_enable();
+					write(0, "Asleep 1_1 \n", 11);
 					while( !awake[1] ){ }
-					write(0, "Timer 1_1 \n", 11);
+					awake[1] = 0;
+					write(0, "Awake 1_1 \n", 11);
 					break;
 				}
 				case 0x02 :{
 					init_timer1_2( sleep_time );
 					irq_enable();
+					write(0, "Asleep 1_2 \n", 11);
 					while( !awake[2] ){ }
-					write(0, "Timer 1_2 \n", 11);
+					awake[2] = 0;
+					write(0, "Awake 1_2 \n", 11);
 					break;
 				}
 				case 0x03:{
 					init_timer2_1( sleep_time );
 					irq_enable();
+					write(0, "Asleep 2_1 \n", 11);
 					while( !awake[3] ){ }
-					write(0, "Timer 2_1 \n", 11);
+					awake[3] = 0;
+					write(0, "Awake 2_1 \n", 11);
 					break;
 				}
 				case 0x04:{
 					init_timer2_2( sleep_time );
 					irq_enable();
+					write(0, "Asleep 2_2 \n", 11);
 					while( !awake[4] ){ }
-					write(0, "Timer 2_3 \n", 11);
+					awake[4] = 0;
+					write(0, "Awake 2_2 \n", 11);
 					break;
 				}
 				default : {
