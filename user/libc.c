@@ -74,31 +74,6 @@ int create_channel( int chan_start, int chan_end) {
   return r;
 }
 
-void* read_channel( int channel_id, int chan ){
-  void* r;
-  asm volatile( "mov r0, %1 \n"
-                "mov r1, %2 \n"
-                "svc #8     \n"
-                "mov %0, r0 \n" 
-              : "=r" (r) 
-              : "r" (channel_id), "r" (chan) 
-              : "r0", "r1");
-  return r;
-}
-
-void* write_channel( int channel_id, int chan ){
-  void* r;
-  asm volatile( "mov r0, %1 \n"
-                "mov r1, %2 \n"
-                "svc #9     \n"
-                "mov %0, r0 \n" 
-              : "=r" (r) 
-              : "r" (channel_id), "r" (chan) 
-              : "r0", "r1");
-  return r;
-}
-
-
 int yield( int pid ){
   int r;
   asm volatile( "mov r0, %1 \n"
@@ -107,6 +82,41 @@ int yield( int pid ){
                 : "=r" (r)
                 : "r" (pid)
                 : "r0");
+  return r;
+}
+
+void* read_channel( int channel_id ){
+  void* r;
+  asm volatile( "mov r0, %1 \n"
+                "svc #8     \n"
+                "mov %0, r0 \n" 
+              : "=r" (r) 
+              : "r" (channel_id) 
+              : "r0", "r1");
+  return r;
+}
+
+int write_channel( int channel_id, void* msg ){
+  int r;
+  asm volatile( "mov r0, %1 \n"
+                "mov r1, %2 \n"
+                "svc #9     \n"
+                "mov %0, r0 \n" 
+              : "=r" (r) 
+              : "r" (channel_id), "r" (msg) 
+              : "r0", "r1");
+  return r;
+}
+
+int sleep( int timer_id, uint32_t sleep_time ){
+  int r;
+  asm volatile( "mov r0, %1 \n"
+                "mov r1, %2 \n"
+                "svc #10    \n"
+                "mov %0, r0 \n"
+                : "=r" (r)
+                : "r" (timer_id), "r" (sleep_time)
+                : "r0", "r1");
   return r;
 }
 

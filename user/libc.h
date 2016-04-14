@@ -5,16 +5,28 @@
 #include <stdint.h>
 #include <string.h>	
 
-int write( int fd, void* x, size_t n );
-int read( void* buffer );
-int yield( int pid );
+// Passing ctrl between different processes 
 int fork();
+int exec( int pid );
+int yield( int pid );
 void exit();
+
+// Writing and reading things
+int read( void* buffer );
+int write( int fd, void* x, size_t n );
 void write_numb( int numb );
 void numb_to_char( int numb );
+
+//Channel related operations
+void* read_channel( int channel_id );
+int write_channel( int channel_id, void* msg );
 int create_channel();
+
+// Info on different pcbs and sleeping for a pcb 
 int get_info();
-int exec( int pid );
+int sleep( int timer_id, uint32_t sleep_time );
+
+// This is used to make my life easier + no warnings 
 void P0();
 void P1();
 void P2();
