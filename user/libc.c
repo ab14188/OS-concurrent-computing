@@ -41,7 +41,7 @@ void exit(){
 }
 
 // Execute process
-int exec( int pid){
+int exec( int pid ){
   int r;
   asm volatile( "mov r0, %1 \n"
                 "svc #4     \n"
@@ -71,6 +71,42 @@ int create_channel( int chan_start, int chan_end) {
               : "=r" (r) 
               : "r" (chan_start), "r" (chan_end) 
               : "r0", "r1");
+  return r;
+}
+
+void* read_channel( int channel_id, int chan ){
+  void* r;
+  asm volatile( "mov r0, %1 \n"
+                "mov r1, %2 \n"
+                "svc #8     \n"
+                "mov %0, r0 \n" 
+              : "=r" (r) 
+              : "r" (channel_id), "r" (chan) 
+              : "r0", "r1");
+  return r;
+}
+
+void* write_channel( int channel_id, int chan ){
+  void* r;
+  asm volatile( "mov r0, %1 \n"
+                "mov r1, %2 \n"
+                "svc #9     \n"
+                "mov %0, r0 \n" 
+              : "=r" (r) 
+              : "r" (channel_id), "r" (chan) 
+              : "r0", "r1");
+  return r;
+}
+
+
+int yield( int pid ){
+  int r;
+  asm volatile( "mov r0, %1 \n"
+                "svc #7     \n"
+                "mov %0, r0 \n"
+                : "=r" (r)
+                : "r" (pid)
+                : "r0");
   return r;
 }
 

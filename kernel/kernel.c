@@ -17,6 +17,7 @@ void 	create_child_pcb( pid_t pid, pid_t ppid, ctx_t* ctx ); 		// create child p
 int total_pcb 	= 8;                                                // number of pcbs
 int age_Time 	= 0;												// age of current process
 int max_Age     = 3;												// max age a process can get 2
+uint32_t stack 	= (uint32_t) &tos_terminal;
 
 pcb_t pcb[ 8 ], *current = NULL;
 ipc_t ipc[ 8 ];
@@ -24,6 +25,7 @@ ipc_t ipc[ 8 ];
 
 void kernel_handler_rst( ctx_t* ctx 		){
 	init_timer();
+	init_timer_philo();
 	irq_enable();
 	
 	init_ipcs_pcbs();
@@ -72,13 +74,15 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 			int error 	= 0;
 
 			if ( cpid != -1) {
-				create_child_pcb( cpid, ppid, ctx );	
+				create_child_pcb( cpid, ppid, ctx );
+				//pcb[cpid].ctx.gpr[0] = cpid;	 might need to change this 
 			}else {
 				char *error_msg  = "-- error executing fork -- 2 many child process ? -- ";
 				write_error( error_msg, 54);
         		error = -1;
 			}
 		
+
 			if ( error == -1 ) ctx -> gpr[ 0 ] = -1;
 			else ctx -> gpr[ 0 ] = cpid; 
 			break;
@@ -100,6 +104,10 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 		}
 		case 0x04 :{ // int exec ( int pid )
 			int pid = ( int ) (ctx -> gpr[0]) ;
+
+			// memcpy( &pcb[ current -> pid ].ctx, ctx, sizeof( ctx_t ) );
+   //   		memcpy( ctx, &pcb[ pid ].ctx, sizeof( ctx_t ) );
+   //   		current = &pcb[ pid ];
 			//memcpy( &pcb[ pid ].ctx, ctx, sizeof(ctx_t));
 			scheduler( ctx );
 			ctx -> gpr[0] = 0;
@@ -123,6 +131,21 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 			ctx -> gpr[0] = ipc_id;
 			break;
 		}
+		case 0x07 :{ // yield (int pid);
+			int pid = ( int )(ctx -> gpr[0]);
+
+			memcpy( &pcb[ current -> pid ].ctx, ctx, sizeof( ctx_t ) );
+     		memcpy( ctx, &pcb[ pid ].ctx, sizeof( ctx_t ) );
+     		current = &pcb[ pid ];
+     		ctx -> gpr[0] = pid;
+     		break;
+		}
+		case 0x08 :{ // void* read_channel( int channel_id, int chan )
+			break;
+		}
+		case 0x09 :{ // void* write_channel( int channel_id, int chan )
+			break;
+		}
 		default	:{
 			char* error_msg = " -- kernel oops -- ";
 			write_error( error_msg, 20);
@@ -138,16 +161,41 @@ void kernel_handler_irq( ctx_t* ctx 		){
 
 	// Handle interrupt then reset Timer
 	if ( id == GIC_SOURCE_TIMER0 ) {
-		TIMER0 -> Timer1IntClr = 0x01;
 		
-		age_Time +=1 ;
+		// age_Time +=1 ;
 		
-		if ( age_Time >= max_Age ) {
-			age_process();
-			age_Time = 0;
-		} 
+		// if ( age_Time >= max_Age ) {
+		// 	age_process();
+		// 	age_Time = 0;
+		// } 
 
-		scheduler( ctx ); 
+		//scheduler( ctx ); 
+		if ( TIMER0 -> Timer1Value == 0x00 ) {
+			write(0, "Timer0 1ctrl irq\n", 19);
+			TIMER0 -> Timer1IntClr = 0x01;
+		}
+		else if ( TIMER0 -> Timer2Value == 0x00 ) {
+			// case philo[0] 
+			write(0, "Timer0 2ctrl irq\n", 19);
+			TIMER0 -> Timer2IntClr = 0x01;     // reset timer for when I want to use it 
+			TIMER0 -> Timer2Ctrl = 0x00000000; // this unables the timer 
+		}
+	}
+	else if ( id == GIC_SOURCE_TIMER1 ){
+		if ( TIMER1 -> Timer1Value == 0x00 ){
+			// case philo[1]
+		}
+		if ( TIMER1 -> Timer2Value == 0x00 ){
+			//case philo[2]
+		}
+	}
+	else if ( id == GIC_SOURCE_TIMER2 ){
+		if ( TIMER2 -> Timer1Value == 0x00 ){
+			// case philo[3]
+		}
+		if ( TIMER2 -> Timer2Value == 0x00 ){
+			//case philo[4]
+		}
 	}
 
 	// Signal that we are done
@@ -156,11 +204,11 @@ void kernel_handler_irq( ctx_t* ctx 		){
 
 // Initialise timer
 void init_timer(){
-	TIMER0->Timer1Load     = 0x00010000; // select period = 2^20 ticks ~= 1 sec // change the 1 to 2 => 2sec -- you can make this much faster and much slower
+	TIMER0->Timer1Load     = 0x01000000; // select period = 2^20 ticks ~= 1 sec // change the 1 to 2 => 2sec -- you can make this much faster and much slower
   	TIMER0->Timer1Ctrl     = 0x00000002; // select 32-bit   timer
   	TIMER0->Timer1Ctrl    |= 0x00000040; // select periodic timer
   	TIMER0->Timer1Ctrl    |= 0x00000020; // enable          timer interrupt
-  	TIMER0->Timer1Ctrl    |= 0x00000080; // enable          Timer1Ctrl
+  	TIMER0->Timer1Ctrl    |= 0x00000080; // enable          TIMER0Ctrl
 
   	GICC0->PMR             = 0x000000F0; // unmask all            interrupts
   	GICD0->ISENABLER[ 1 ] |= 0x00000010; // enable timer          interrupt
@@ -168,7 +216,19 @@ void init_timer(){
   	GICD0->CTLR            = 0x00000001; // enable GIC distributor
 }
 
+// Initialise timer for philosopher 
+void init_timer_philo(){
+	TIMER0->Timer2Load     = 0x00010000; // select period = 2^20 ticks ~= 1 sec // change the 1 to 2 => 2sec -- you can make this much faster and much slower
+  	TIMER0->Timer2Ctrl     = 0x00000002; // select 32-bit   timer
+  	TIMER0->Timer2Ctrl    |= 0x00000040; // select periodic timer
+  	TIMER0->Timer2Ctrl    |= 0x00000020; // enable          timer interrupt
+  	TIMER0->Timer2Ctrl    |= 0x00000080; // enable          TIMER0Ctrl
 
+  	GICC0->PMR             = 0x000000F0; // unmask all            interrupts
+  	GICD0->ISENABLER[ 1 ] |= 0x00000010; // enable timer          interrupt
+  	GICC0->CTLR            = 0x00000001; // enable GIC interface
+  	GICD0->CTLR            = 0x00000001; // enable GIC distributor
+}
 
 
 // Scheduler : priority based
@@ -220,6 +280,7 @@ pid_t create_pcb( uint32_t pc, uint32_t sp, int priority){
 
 // Create new Process -- copy parent data into child data
 void create_child_pcb( pid_t pid, pid_t ppid, ctx_t* ctx ){
+	//stack = stack - (pid - ppid )*0x00001000;need to do some stack  manipulation of some sort ... not sure how ghghhh c
 	// Blank pcb cpid before writing into it 
    	memset (&pcb[ pid ], 0, sizeof(pcb_t));
 

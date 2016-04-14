@@ -9,6 +9,6 @@
 extern void (*entry_philosophers)(); 
 extern uint32_t tos_philosophers;
 
-void Philosophers();
+void philo_run();
 
 #endif

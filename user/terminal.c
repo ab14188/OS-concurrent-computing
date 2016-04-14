@@ -5,6 +5,7 @@ int extract_command( char* command, char* buffer ){
   
   while (*buffer != '\r') {
     if (*command == '\0' )    return -1;
+    if (*buffer == '\0' ) return -1;
     if (*buffer != *command)  return -1;
     buffer++;
     command++;
@@ -62,7 +63,20 @@ void execute( char* buffer ){
       exec( pid );  
     } 
     else return;
-  } // for theses i would need to age the process to a maximum hence just priority to -1 such that it never goes to it.. 
+  } 
+  else if ( extract_command("run philo\r", buffer) == 1 ){
+    int pid     = fork();  
+
+    if ( pid == 0 ) { // Case in Child process
+      Table();
+      exit();
+      return;
+    }
+    else if ( pid > 0 ){ // Case in Parent process           ....       ....       ....        ....       
+      exec( pid );  
+    } 
+    else return;
+  }
   else if ( extract_command("run p0 &\r", buffer) == 1 ){
     int pid = fork();
     return ;
