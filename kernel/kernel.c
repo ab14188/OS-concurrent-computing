@@ -239,50 +239,50 @@ void kernel_handler_irq( ctx_t* ctx 		){
 			//write(0, "Timer0 1ctrl irq\n", 19);
 			TIMER0 -> Timer1IntClr = 0x01;
 	}
-	else if ( id == GIC_SOURCE_TIMER1 ){
-		if ( TIMER1 -> Timer1Value == 0x00 ) { 		// case philo[1]
-			// Wake up process
-			awake[1] = 1;
-			yield( ipc[1].chan_start );
-			// Timer reset
-			//TIMER1 -> Timer1IntClr 	= 0x01;     // reset timer for when I want to use it again 
-			//TIMER1 -> Timer1Ctrl 	= 0x00000000; // this unables the timer 
-		}
-		else if ( TIMER1 -> Timer2Value == 0x00 ) { //case philo[2]
-			// Wake up process
-			awake[2] = 1;
-			yield( ipc[2].chan_start );
-			// Timer reset
-			TIMER1 -> Timer2IntClr 	= 0x01;     // reset timer for when I want to use it again 
-			TIMER1 -> Timer2Ctrl 	= 0x00000000; // this unables the timer 
-		}
-	}
-	else if ( id == GIC_SOURCE_TIMER2 ){
-		if ( TIMER2 -> Timer1Value == 0x00 ) { 		// case philo[3]
-			// Wake up process
-			awake[3] = 1;
-			yield( ipc[3].chan_start );
-			// Timer reset
-			//TIMER2 -> Timer1IntClr 	= 0x01;     // reset timer for when I want to use it again 
-			//TIMER2 -> Timer1Ctrl 	= 0x00000000; // this unables the timer 
-		}
-		else if ( TIMER2 -> Timer2Value == 0x00 ) { //case philo[4]
-			// Wake up process
-			awake[4] = 1;
-			yield( ipc[4].chan_start );
-			// Timer reset
-			TIMER2 -> Timer2IntClr 	= 0x01;     // reset timer for when I want to use it again 
-			TIMER2 -> Timer2Ctrl 	= 0x00000000; // this unables the timer 
-		}
-	}
-	else if ( id == GIC_SOURCE_TIMER3 ){
-		// Wake up process
-		awake[0] = 1;
-		yield( ipc[0].chan_start );
-		// Timer reset
-		TIMER3 -> Timer1IntClr 	= 0x01;     // reset timer for when I want to use it again 
-		TIMER3 -> Timer1Ctrl 	= 0x00000000; // this unables the timer 
-	}
+	// else if ( id == GIC_SOURCE_TIMER1 ){
+	// 	if ( TIMER1 -> Timer1Value == 0x00 ) { 		// case philo[1]
+	// 		// Wake up process
+	// 		awake[1] = 1;
+	// 		yield( ipc[1].chan_start );
+	// 		// Timer reset
+	// 		//TIMER1 -> Timer1IntClr 	= 0x01;     // reset timer for when I want to use it again 
+	// 		//TIMER1 -> Timer1Ctrl 	= 0x00000000; // this unables the timer 
+	// 	}
+	// 	else if ( TIMER1 -> Timer2Value == 0x00 ) { //case philo[2]
+	// 		// Wake up process
+	// 		awake[2] = 1;
+	// 		yield( ipc[2].chan_start );
+	// 		// Timer reset
+	// 		TIMER1 -> Timer2IntClr 	= 0x01;     // reset timer for when I want to use it again 
+	// 		TIMER1 -> Timer2Ctrl 	= 0x00000000; // this unables the timer 
+	// 	}
+	// }
+	// else if ( id == GIC_SOURCE_TIMER2 ){
+	// 	if ( TIMER2 -> Timer1Value == 0x00 ) { 		// case philo[3]
+	// 		// Wake up process
+	// 		awake[3] = 1;
+	// 		yield( ipc[3].chan_start );
+	// 		// Timer reset
+	// 		//TIMER2 -> Timer1IntClr 	= 0x01;     // reset timer for when I want to use it again 
+	// 		//TIMER2 -> Timer1Ctrl 	= 0x00000000; // this unables the timer 
+	// 	}
+	// 	else if ( TIMER2 -> Timer2Value == 0x00 ) { //case philo[4]
+	// 		// Wake up process
+	// 		awake[4] = 1;
+	// 		yield( ipc[4].chan_start );
+	// 		// Timer reset
+	// 		TIMER2 -> Timer2IntClr 	= 0x01;     // reset timer for when I want to use it again 
+	// 		TIMER2 -> Timer2Ctrl 	= 0x00000000; // this unables the timer 
+	// 	}
+	// }
+	// else if ( id == GIC_SOURCE_TIMER3 ){
+	// 	// Wake up process
+	// 	awake[0] = 1;
+	// 	yield( ipc[0].chan_start );
+	// 	// Timer reset
+	// 	TIMER3 -> Timer1IntClr 	= 0x01;     // reset timer for when I want to use it again 
+	// 	TIMER3 -> Timer1Ctrl 	= 0x00000000; // this unables the timer 
+	// }
 
 	// Signal that we are done
 	GICC0 -> EOIR = id;
