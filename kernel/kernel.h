@@ -40,7 +40,8 @@ typedef struct {
 * chanstart and chanend: the pcbs that are linked
 */
 typedef struct {
-	void* channels[2];
+	int channels[2];
+	//void* channels[2];
 	pid_t chan_start; 
 	pid_t chan_end;
 } ipc_t;

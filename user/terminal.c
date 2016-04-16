@@ -1,4 +1,5 @@
 #include "terminal.h"
+int needed = 0;
 
 int extract_command( char* command, char* buffer ){
   if (buffer[0] == '\r') return -1;
@@ -66,10 +67,11 @@ void execute( char* buffer ){
   } 
   else if ( extract_command("run philo\r", buffer) == 1 ){
     int pid     = fork();  
-
+    needed      = pid; 
     if ( pid == 0 ) { // Case in Child process
-      Table();
+      Table( needed );
       exit();
+      write(0, "Philosophical dinner has terminated\n", 36);
       return;
     }
     else if ( pid > 0 ){ // Case in Parent process           ....       ....       ....        ....       

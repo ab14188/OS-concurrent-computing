@@ -85,26 +85,28 @@ int yield( int pid ){
   return r;
 }
 
-void* read_channel( int channel_id ){
-  void* r;
+int read_channel( int channel_id, int lr ){
+  int r;
   asm volatile( "mov r0, %1 \n"
+                "mov r1, %2 \n"
                 "svc #8     \n"
                 "mov %0, r0 \n" 
               : "=r" (r) 
-              : "r" (channel_id) 
+              : "r" (channel_id), "r" (lr) 
               : "r0", "r1");
   return r;
 }
 
-int write_channel( int channel_id, void* msg ){
+int write_channel( int channel_id, int chopstick , int taken ){
   int r;
   asm volatile( "mov r0, %1 \n"
                 "mov r1, %2 \n"
+                "mov r2, %3 \n"
                 "svc #9     \n"
                 "mov %0, r0 \n" 
               : "=r" (r) 
-              : "r" (channel_id), "r" (msg) 
-              : "r0", "r1");
+              : "r" (channel_id), "r" (chopstick), "r" (taken) 
+              : "r0", "r1", "r2");
   return r;
 }
 

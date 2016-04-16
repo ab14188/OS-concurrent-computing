@@ -18,8 +18,8 @@ void write_numb( int numb );
 void numb_to_char( int numb );
 
 //Channel related operations
-void* read_channel( int channel_id );
-int write_channel( int channel_id, void* msg );
+int read_channel( int channel_id, int lr );
+int write_channel( int channel_id, int chopstick, int taken );
 int create_channel();
 
 // Info on different pcbs and sleeping for a pcb 
