@@ -16,4 +16,13 @@ SECTIONS {
   /* allocate stack for terminal */
   .       = . + 0x00001000;  
   tos_terminal  = .;
+  /* allocate stack for P0 */
+  .       = . + 0x00001000;  
+  tos_P0  = .;
+  /* allocate stack for P1 */
+  .       = . + 0x00001000;  
+  tos_P1  = .;
+  /* allocate stack for P2 */
+  .       = . + 0x00001000;  
+  tos_P2  = .;
 }

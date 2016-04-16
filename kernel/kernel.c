@@ -6,6 +6,9 @@ void 	age_process(); 												// age current process
 void 	scheduler ( ctx_t* ctx 			); 							// priority scheduler
 void 	write_error( char* error_msg, int size); 					// write error msg
 
+void launch_timer1();
+
+
 int 	pcbs_info(); 												// get pcbs information
 int 	get_numb_live_pcb(); 										// get number of used pcbs
 int 	get_ipc_slot(); 											// get an empty slot for ipc
@@ -26,6 +29,7 @@ ipc_t ipc[ 8 ];
 
 void kernel_handler_rst( ctx_t* ctx 		){
 	init_timer();
+	//launch_timer1();
 	irq_enable();
 	
 	init_ipcs_pcbs();
@@ -114,6 +118,8 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
    //   		current = &pcb[ pid ];
 			//memcpy( &pcb[ pid ].ctx, ctx, sizeof(ctx_t));
 			scheduler( ctx );
+			
+			//pcb[ current -> pid ].ctx.pc = ( uint32_t ) *entry_P0;
 			ctx -> gpr[0] = 0;
 			break;
 		}
@@ -160,8 +166,38 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 			break;
 		}
 		case 10 :{ // int sleep ( int i )
-			//int timer_id = ( int )(ctx -> gpr[0]);
-			// uint32_t sleep_time = (uint32_t)(ctx -> gpr[1]);
+			int timer_id = ( int )(ctx -> gpr[0]);
+			uint32_t sleep_time = (uint32_t)(ctx -> gpr[1]);
+
+			switch ( timer_id ){
+				case 0x00:{
+					break;
+				}
+				case 0x01:{
+					break;
+				}
+				case 0x02:{
+					//launch_timer1();
+
+					break;
+				}
+				case 0x03:{
+					//launch_timer2();
+					break;
+				}
+				case 0x04:{
+					//irq_enable();
+					//GICD0->ISENABLER[ 1 ] |= 0x00000000;
+					//TIMER1 -> Timer1IntClr 	= 0x01;
+					//launch_timer1();
+					//irq_enable();
+					while( awake[1] != 1 ) {write(0,"sleeping\n", 9);}
+					break;
+				}
+				default :{
+					break;
+				}
+			}
 			// //irq_unable();
 			// //init_timer();
 			// switch( timer_id ){
@@ -213,6 +249,11 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 			// }	
 			break;
 		}
+		case 11 :{
+			int chan_id = ( int )(ctx -> gpr[0]);
+			memset(&ipc[ chan_id ], -1, sizeof(ipc_t));
+			break;
+		}
 		default	:{
 			char* error_msg = " -- kernel oops -- ";
 			write_error( error_msg, 20);
@@ -225,7 +266,8 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 void kernel_handler_irq( ctx_t* ctx 		){
 	// Read interrupt Id
 	uint32_t id = GICC0 -> IAR;
-
+	uint32_t id1 = GICC1 -> IAR;
+	int timer = -1;
 	// Handle interrupt then reset Timer
 	if ( id == GIC_SOURCE_TIMER0 ) {
 			age_Time +=1 ;
@@ -236,18 +278,19 @@ void kernel_handler_irq( ctx_t* ctx 		){
 			} 
 
 			scheduler( ctx ); 
-			//write(0, "Timer0 1ctrl irq\n", 19);
 			TIMER0 -> Timer1IntClr = 0x01;
+			timer = 0;
 	}
-	// else if ( id == GIC_SOURCE_TIMER1 ){
-	// 	if ( TIMER1 -> Timer1Value == 0x00 ) { 		// case philo[1]
-	// 		// Wake up process
-	// 		awake[1] = 1;
-	// 		yield( ipc[1].chan_start );
-	// 		// Timer reset
-	// 		//TIMER1 -> Timer1IntClr 	= 0x01;     // reset timer for when I want to use it again 
-	// 		//TIMER1 -> Timer1Ctrl 	= 0x00000000; // this unables the timer 
-	// 	}
+	if ( id1 == GIC_SOURCE_TIMER1 ){
+		//if ( TIMER1 -> Timer1Value == 0x00 ) { 		// case philo[1]
+			// Wake up process
+			awake[1] = 1;
+			write(0, "awake bitch!\n", 14);
+			//Timer reset
+			TIMER1 -> Timer1IntClr 	= 0x01;     // reset timer for when I want to use it again 
+			//TIMER1 -> Timer1Ctrl 	= 0x00000000; // this unables the timer 
+		//}
+	}
 	// 	else if ( TIMER1 -> Timer2Value == 0x00 ) { //case philo[2]
 	// 		// Wake up process
 	// 		awake[2] = 1;
@@ -285,7 +328,25 @@ void kernel_handler_irq( ctx_t* ctx 		){
 	// }
 
 	// Signal that we are done
-	GICC0 -> EOIR = id;
+	if (timer == 0 )GICC0 -> EOIR = id;
+	else if (timer == 1)GICC1 -> EOIR = id1;
+}
+
+void launch_timer1() {
+	TIMER1->Timer1Load     = 0x00000010; // select period = 2^20 ticks ~= 1 sec  
+  	TIMER1->Timer1Ctrl     = 0x00000002; // select 32-bit   timer
+  	TIMER1->Timer1Ctrl    |= 0x00000040; // select periodic timer
+  	TIMER1->Timer1Ctrl    |= 0x00000020; // enable          timer interrupt
+  	TIMER1->Timer1Ctrl    |= 0x00000080; // enable          TIMER0Ctrl
+
+  	GICC1->PMR             = 0x000000F0; // unmask all            interrupts
+  	GICD1->ISENABLER[ 1 ] |= 0x00000010; // enable timer          interrupt
+  	GICC1->CTLR            = 0x00000001; // enable GIC interface
+  	GICD1->CTLR            = 0x00000001; // enable GIC distributor
+}
+
+void launch_timer2(){
+
 }
 
 // Initialise timer
@@ -365,7 +426,7 @@ void create_child_pcb( pid_t pid, pid_t ppid, ctx_t* ctx ){
 
 
    	memcpy( &pcb[ pid ].ctx, ctx, sizeof(ctx_t));
-   	memcpy( &pcb[ pid ].ctx.sp, &pcb[ ppid ].ctx.sp, sizeof(&pcb[ ppid ].ctx.sp));
+   	//memcpy( &pcb[ pid ].ctx.sp, &pcb[ ppid ].ctx.sp, sizeof(&pcb[ ppid ].ctx.sp));
 }
 
 // Gets number of live processes

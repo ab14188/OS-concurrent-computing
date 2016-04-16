@@ -32,8 +32,9 @@ int stop_hungry( int hungry ){
 //     return x;
 // }
 
+
 void eat( int id, int i ){
-    //uint32_t eat_Time = generateRandom();
+    //uint32_t eat_Time = s);
     //sleep( i, eat_Time); // time to eat  -- should have some place where I say I eat // enable timr again did ypu disable them before 
     write(0, "Philosopher: " , 13); write_numb(i + 1) ; write(0, " is eating \n", 12);
 }
@@ -45,8 +46,9 @@ void think( int id, int i ){
     //uint32_t  think_time = generateRandom();
     //uint32_t counter = 0;
     //while ( counter < think_time) { counter ++ ;}
-    write(0, "Philosopher: " , 13); write_numb(i + 1); write(0, " is thinking \n", 14);
-    //sleep( i, think_time ); 
+    write(0, "Philosopher:  " , 13); write_numb(i + 1); write(0, " is thinking \n", 14);
+    //int think_time = sleepTime();
+    //sleep( i, 29 ); 
 }
 
 
@@ -65,7 +67,7 @@ void hungry_philo( int id, int i ){
 
 
 void get_right( int id, int i ){
-    write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " wants right chopstick!!\n", 26);
+    write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " wants right chopstick!!\n", 25);
     
     // if right chopstick free => ask the other person through channel .. send request get it else wait 
     int free_chop = 0; 
@@ -80,12 +82,12 @@ void get_right( int id, int i ){
     phils[i].has_right = 1;
     
     //send got chopstick
-    write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " has right chopstick!!\n", 24);
+    write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " has right chopstick!!\n", 23);
     write_channel( phils[ i ].chan_right, 1, 1); // left taken is the msg 
 }
 
 void get_left( int id, int i ){
-    write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " wants left chopstick!!\n", 26);
+    write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " wants left chopstick!!\n", 24);
     
     // if right chopstick free => ask the other person through channel .. send request get it else wait 
     int free_chop = 0; 
@@ -100,21 +102,21 @@ void get_left( int id, int i ){
     phils[i].has_left = 1;
     
     //send got chopstick
-    write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " has left chopstick!!\n", 24);
+    write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " has left chopstick!!\n", 22);
     write_channel( phils[ i ].chan_left, 0, 1); // right taken is the msg 
 }
 
  
 void right_put( int id, int i){
     phils[i].has_right = 0;
-    write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " right chopstick on table!!\n", 32);
+    write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " right chopstick on table!!\n", 28);
     //send msg through channel
     write_channel( phils[ i ].chan_right, 1, 0); // left taken is the msg 
 }
 
 void left_put( int id, int i){
     phils[i].has_left = 0;
-    write(0, "Philosopher: ", 13); write_numb( i+1 ); write(0, " left chopstick on table!!\n", 32);
+    write(0, "Philosopher: ", 13); write_numb( i+1 ); write(0, " left chopstick on table!!\n", 27);
     //send msg through channel 
     write_channel( phils[ i ].chan_left, 0, 0); // right taken is the msg 
 }
@@ -135,8 +137,8 @@ void guest( int id ){
         eat( id, i );                  // this has a timer of some sorts
         right_put( id, i );
         left_put( id , i);
+        write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " eating procedure success!!\n", 28);
     }
-    write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " eating procedure success!!\n", 32);
 }
 
 
@@ -209,6 +211,30 @@ void Table( int currentId ) {
 
     // Seat the guests at the table and start 
     guest( ctrl );
+    exit();
+}
+
+// Reseting channels and the table ( as I am using global variables )
+void reset_Table(){
+    
+    for ( int i  = 0; i < 5 ; i++){
+        memset( &philo[i], 0 , sizeof(int) );
+        memset( &phils[i], 0, sizeof(phils_t));
+    }
+
+    delete_channel(chan1_2);
+    delete_channel(chan2_3);
+    delete_channel(chan3_4);
+    delete_channel(chan4_5);
+    delete_channel(chan5_1);
+    
+    before_forks    = 1;
+    ctrl            = -1; 
+    chan5_1         = -1;
+    chan4_5         = -1;
+    chan3_4         = -1;
+    chan2_3         = -1;
+    chan1_2         = -1;
 }
 
 void (*entry_Philosophers)() = &Table;

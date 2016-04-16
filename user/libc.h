@@ -20,7 +20,8 @@ void numb_to_char( int numb );
 //Channel related operations
 int read_channel( int channel_id, int lr );
 int write_channel( int channel_id, int chopstick, int taken );
-int create_channel();
+int create_channel( int chanstart, int chanend);
+int delete_channel( int channel_id );
 
 // Info on different pcbs and sleeping for a pcb 
 int get_info();
@@ -32,5 +33,6 @@ void P1();
 void P2();
 void walk();
 void Table();	
+void reset_Table();
 
 #endif

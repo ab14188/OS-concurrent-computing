@@ -25,7 +25,8 @@ void execute( char* buffer ){
       exit();
     }
     else if ( pid > 0 ){ // Case in Parent process
-      exec( pid );  
+      exec( pid );
+      //exectry( p0 );
     } 
     else return;
   }
@@ -70,7 +71,8 @@ void execute( char* buffer ){
     needed      = pid; 
     if ( pid == 0 ) { // Case in Child process
       Table( needed );
-      exit();
+      //exit();
+      reset_Table();
       write(0, "Philosophical dinner has terminated\n", 36);
       return;
     }

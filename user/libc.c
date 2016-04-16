@@ -122,6 +122,17 @@ int sleep( int timer_id, uint32_t sleep_time ){
   return r;
 }
 
+int delete_channel( int channel_id ){
+  int r;
+  asm volatile( "mov r0, %1 \n"
+                "svc #11     \n"
+                "mov %0, r0 \n"
+                : "=r" (r)
+                : "r" (channel_id)
+                : "r0");
+  return r;
+}
+
 
 void write_numb( int numb ) {
 	int size_numb = 0, reverse = 0, digit   = 0;
