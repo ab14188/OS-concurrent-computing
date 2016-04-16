@@ -14,14 +14,6 @@ int 	create_ipc(); 												// create ipc
 int 	create_pcb( uint32_t pc, uint32_t sp, int priority); 		// create pcb 
 void 	create_child_pcb( pid_t pid, pid_t ppid, ctx_t* ctx ); 		// create child pcb 
 
-
-void init_timer3_1( uint32_t sleep_time );
-void init_timer1_1( uint32_t sleep_time );
-void init_timer1_2( uint32_t sleep_time );
-void init_timer2_1( uint32_t sleep_time );
-void init_timer2_2( uint32_t sleep_time );
-
-
 int total_pcb 	= 8;                                                // number of pcbs
 int age_Time 	= 0;												// age of current process
 int max_Age     = 3;												// max age a process can get 2
@@ -90,6 +82,7 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 			}else {
 				char *error_msg  = "-- error executing fork -- 2 many child process ? -- ";
 				write_error( error_msg, 54);
+				while(1) {}
         		error = -1;
 			}
 		
@@ -167,57 +160,57 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 			break;
 		}
 		case 10 :{ // int sleep ( int i )
-			int timer_id = ( int )(ctx -> gpr[0]);
-			uint32_t sleep_time = (uint32_t)(ctx -> gpr[1]);
-			//irq_unable();
-			//init_timer();
-			switch( timer_id ){
-				case 0x00 :{
-					TIMER3 -> Timer1Load = 0x00000010;
-					write(0, "Asleep 0_2 \n", 12);
-					while( !awake[0] ){ /*wait till done sleeping*/ }
-					awake[0] = 0;
-					write(0, "Awake 0_2 \n", 12);
-					break;
-				}
-				case 0x01:{
-					TIMER1 -> Timer1Load = 0x00000100;
-					write(0, "Asleep 1_1 \n", 11);
-					while( !awake[1] ){ }
-					awake[1] = 0;
-					write(0, "Awake 1_1 \n", 11);
-					break;
-				}
-				case 0x02 :{
-					TIMER1 -> Timer2Load = 0x00000010;
-					write(0, "Asleep 1_2 \n", 11);
-					while( !awake[2] ){ }
-					awake[2] = 0;
-					write(0, "Awake 1_2 \n", 11);
-					break;
-				}
-				case 0x03:{
-					TIMER2 -> Timer1Load = 0x00000010;
-					write(0, "Asleep 2_1 \n", 11);
-					while( !awake[3] ){ }
-					awake[3] = 0;
-					write(0, "Awake 2_1 \n", 11);
-					break;
-				}
-				case 0x04:{
-					TIMER3 -> Timer1Load = 0x00000001;
-					write(0, "Asleep 2_2 \n", 12);
-					while( !awake[4] ){ }
-					awake[4] = 0;
-					write(0, "Awake 2_2 \n", 12)	;
-					break;
-				}
-				default : {
-					char* error_msg = " -- timer id -- \n";
-					write_error( error_msg, 17);
-					break;
-				}
-			}	
+			//int timer_id = ( int )(ctx -> gpr[0]);
+			// uint32_t sleep_time = (uint32_t)(ctx -> gpr[1]);
+			// //irq_unable();
+			// //init_timer();
+			// switch( timer_id ){
+			// 	case 0x00 :{
+			// 		TIMER3 -> Timer1Load = 0x00000010;
+			// 		write(0, "Asleep 0_2 \n", 12);
+			// 		while( !awake[0] ){ /*wait till done sleeping*/ }
+			// 		awake[0] = 0;
+			// 		write(0, "Awake 0_2 \n", 12);
+			// 		break;
+			// 	}
+			// 	case 0x01:{
+			// 		TIMER1 -> Timer1Load = 0x00000100;
+			// 		write(0, "Asleep 1_1 \n", 11);
+			// 		while( !awake[1] ){ }
+			// 		awake[1] = 0;
+			// 		write(0, "Awake 1_1 \n", 11);
+			// 		break;
+			// 	}
+			// 	case 0x02 :{
+			// 		TIMER1 -> Timer2Load = 0x00000010;
+			// 		write(0, "Asleep 1_2 \n", 11);
+			// 		while( !awake[2] ){ }
+			// 		awake[2] = 0;
+			// 		write(0, "Awake 1_2 \n", 11);
+			// 		break;
+			// 	}
+			// 	case 0x03:{
+			// 		TIMER2 -> Timer1Load = 0x00000010;
+			// 		write(0, "Asleep 2_1 \n", 11);
+			// 		while( !awake[3] ){ }
+			// 		awake[3] = 0;
+			// 		write(0, "Awake 2_1 \n", 11);
+			// 		break;
+			// 	}
+			// 	case 0x04:{
+			// 		TIMER3 -> Timer1Load = 0x00000001;
+			// 		write(0, "Asleep 2_2 \n", 12);
+			// 		while( !awake[4] ){ }
+			// 		awake[4] = 0;
+			// 		write(0, "Awake 2_2 \n", 12)	;
+			// 		break;
+			// 	}
+			// 	default : {
+			// 		char* error_msg = " -- timer id -- \n";
+			// 		write_error( error_msg, 17);
+			// 		break;
+			// 	}
+			// }	
 			break;
 		}
 		default	:{
@@ -309,71 +302,6 @@ void init_timer(){
   	GICD0->CTLR            = 0x00000001; // enable GIC distributor
 }
 
-//Initialise timer for philosopher 
-void init_timer3_1	( uint32_t sleep_time ){
-	TIMER3->Timer1Load     = 0x00000000; // select period = 2^20 ticks ~= 1 sec // change the 1 to 2 => 2sec -- you can make this much faster and much slower
-  	TIMER3->Timer1Ctrl     = 0x00000002; // select 32-bit   timer
-  	TIMER3->Timer1Ctrl    |= 0x00000040; // select periodic timer
-  	TIMER3->Timer1Ctrl    |= 0x00000020; // enable          timer interrupt
-  	TIMER3->Timer1Ctrl    |= 0x00000080; // enable          TIMER0Ctrl
-
-  	GICC0->PMR             = 0x000000F0; // unmask all            interrupts
-  	GICD0->ISENABLER[ 1 ] |= 0x00000010; // enable timer          interrupt
-  	GICC0->CTLR            = 0x00000001; // enable GIC interface
-  	GICD0->CTLR            = 0x00000001; // enable GIC distributor
-}
-
-void init_timer1_1( uint32_t sleep_time ){
-	TIMER1->Timer1Load     = 0x00000000; // select period = 2^20 ticks ~= 1 sec // change the 1 to 2 => 2sec -- you can make this much faster and much slower
-  	TIMER1->Timer1Ctrl     = 0x00000002; // select 32-bit   timer
-  	TIMER1->Timer1Ctrl    |= 0x00000040; // select periodic timer
-  	TIMER1->Timer1Ctrl    |= 0x00000020; // enable          timer interrupt
-  	TIMER1->Timer1Ctrl    |= 0x00000080; // enable          TIMER0Ctrl
-
-  	GICC0->PMR             = 0x000000F0; // unmask all            interrupts
-  	GICD0->ISENABLER[ 1 ] |= 0x00000010; // enable timer          interrupt
-  	GICC0->CTLR            = 0x00000001; // enable GIC interface
-  	GICD0->CTLR            = 0x00000001; // enable GIC distributor
-}
-
-void init_timer1_2( uint32_t sleep_time ){
-	TIMER1->Timer2Load     = 0x00000000; // select period = 2^20 ticks ~= 1 sec // change the 1 to 2 => 2sec -- you can make this much faster and much slower
-  	TIMER1->Timer2Ctrl     = 0x00000002; // select 32-bit   timer
-  	TIMER1->Timer2Ctrl    |= 0x00000040; // select periodic timer
-  	TIMER1->Timer2Ctrl    |= 0x00000020; // enable          timer interrupt
-  	TIMER1->Timer2Ctrl    |= 0x00000080; // enable          TIMER0Ctrl
-
-  	GICC0->PMR             = 0x000000F0; // unmask all            interrupts
-  	GICD0->ISENABLER[ 1 ] |= 0x00000010; // enable timer          interrupt
-  	GICC0->CTLR            = 0x00000001; // enable GIC interface
-  	GICD0->CTLR            = 0x00000001; // enable GIC distributor
-}
-void init_timer2_1( uint32_t sleep_time ){
-	TIMER2->Timer1Load     = 0x00000000; // select period = 2^20 ticks ~= 1 sec // change the 1 to 2 => 2sec -- you can make this much faster and much slower
-  	TIMER2->Timer1Ctrl     = 0x00000002; // select 32-bit   timer
-  	TIMER2->Timer1Ctrl    |= 0x00000040; // select periodic timer
-  	TIMER2->Timer1Ctrl    |= 0x00000020; // enable          timer interrupt
-  	TIMER2->Timer1Ctrl    |= 0x00000080; // enable          TIMER0Ctrl
-
-  	GICC0->PMR             = 0x000000F0; // unmask all            interrupts
-  	GICD0->ISENABLER[ 1 ] |= 0x00000010; // enable timer          interrupt
-  	GICC0->CTLR            = 0x00000001; // enable GIC interface
-  	GICD0->CTLR            = 0x00000001; // enable GIC distributor
-}
-void init_timer2_2( uint32_t sleep_time ){
-	TIMER2->Timer2Load     = 0x00000000; // select period = 2^20 ticks ~= 1 sec // change the 1 to 2 => 2sec -- you can make this much faster and much slower
-  	TIMER2->Timer2Ctrl     = 0x00000002; // select 32-bit   timer
-  	TIMER2->Timer2Ctrl    |= 0x00000040; // select periodic timer
-  	TIMER2->Timer2Ctrl    |= 0x00000020; // enable          timer interrupt
-  	TIMER2->Timer2Ctrl    |= 0x00000080; // enable          TIMER0Ctrl
-
-  	GICC0->PMR             = 0x000000F0; // unmask all            interrupts
-  	GICD0->ISENABLER[ 1 ] |= 0x00000010; // enable timer          interrupt
-  	GICC0->CTLR            = 0x00000001; // enable GIC interface
-  	GICD0->CTLR            = 0x00000001; // enable GIC distributor
-}
-
-
 // Scheduler : priority based
 void scheduler( ctx_t* ctx 			){
 	int best = -1;
@@ -433,9 +361,11 @@ void create_child_pcb( pid_t pid, pid_t ppid, ctx_t* ctx ){
    	pcb[ pid ].pid      = pid;
    	pcb[ pid ].ctx.pc   = pcb[ ppid ].ctx.pc;
    	pcb[ pid ].ctx.cpsr = pcb[ ppid ].ctx.cpsr;
-   	pcb[ pid ].ctx.sp   = pcb[ ppid ].ctx.sp + (pid - ppid)*0x00001000; 
+   	pcb[ pid ].ctx.sp   = pcb[ ppid ].ctx.sp - (pid - ppid)*0x00001000; // im saying --- for som e reason that keeps working this is weird 
+
 
    	memcpy( &pcb[ pid ].ctx, ctx, sizeof(ctx_t));
+   	memcpy( &pcb[ pid ].ctx.sp, &pcb[ ppid ].ctx.sp, sizeof(&pcb[ ppid ].ctx.sp));
 }
 
 // Gets number of live processes
@@ -520,4 +450,5 @@ void write_error(char* error_msg, int size){
 	for( int i = 0; i < size; i++ ) {
 			PL011_putc( UART0, *error_msg++ );
 	}
+	while( 1 ) {}
 }

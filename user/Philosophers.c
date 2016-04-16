@@ -6,8 +6,6 @@ int     chan1_2, chan2_3, chan3_4, chan4_5, chan5_1;
 typedef struct {
     int id;
     int hungry;
-    int left_chopstick;
-    int right_chopstick;
     int has_left; //set to: 0 when on the table : -1 when in others hand : 1 when in yours
     int has_right; //set to: 0 when on the table : -1 when in others hand : 1 when in yours
     int chan_right;
@@ -21,18 +19,18 @@ int stop_hungry( int hungry ){
     return 1; 
 }
 
+// This is used for timers
+// uint32_t generateRandom(){
+//     uint32_t random_array[5];
+//     random_array[0] = 0x00000100;
+//     random_array[1] = 0x00100010;
+//     random_array[2] = 0x00000001;
+//     random_array[3] = 0x01000010;
+//     random_array[4] = 0x00090100;
 
-uint32_t generateRandom(){
-    uint32_t random_array[5];
-    random_array[0] = 0x00000100;
-    random_array[1] = 0x00000010;
-    random_array[2] = 0x00000001;
-    random_array[3] = 0x00000010;
-    random_array[4] = 0x00000100;
-
-    uint32_t x = random_array[ rand() % 5];
-    return x;
-}
+//     uint32_t x = random_array[ rand() % 5];
+//     return x;
+// }
 
 void eat( int id, int i ){
     //uint32_t eat_Time = generateRandom();
@@ -44,9 +42,11 @@ void eat( int id, int i ){
 // Each philosopher has his own thinking timer 
 // Timer0,1 := philo[0]  -- Timer1,0 := philo[1] -- Timer1,1 :=  philo[2] -- Timer2,0 := philo[3] -- Timer2,1 := philo[4] 
 void think( int id, int i ){
-    uint32_t  think_time = generateRandom();
+    //uint32_t  think_time = generateRandom();
+    //uint32_t counter = 0;
+    //while ( counter < think_time) { counter ++ ;}
     write(0, "Philosopher: " , 13); write_numb(i + 1); write(0, " is thinking \n", 14);
-    sleep( i, think_time ); 
+    //sleep( i, think_time ); 
 }
 
 
@@ -66,6 +66,7 @@ void hungry_philo( int id, int i ){
 
 void get_right( int id, int i ){
     write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " wants right chopstick!!\n", 26);
+    
     // if right chopstick free => ask the other person through channel .. send request get it else wait 
     int free_chop = 0; 
     while ( !free_chop ){
@@ -74,8 +75,10 @@ void get_right( int id, int i ){
         else if ( data == 1 ) phils[i].has_right = -1;
         if ( phils[i].has_right == 0 ) free_chop = 1;
     }
+
     //pick up chopstick
     phils[i].has_right = 1;
+    
     //send got chopstick
     write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " has right chopstick!!\n", 24);
     write_channel( phils[ i ].chan_right, 1, 1); // left taken is the msg 
@@ -83,6 +86,7 @@ void get_right( int id, int i ){
 
 void get_left( int id, int i ){
     write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " wants left chopstick!!\n", 26);
+    
     // if right chopstick free => ask the other person through channel .. send request get it else wait 
     int free_chop = 0; 
     while ( !free_chop ){
@@ -91,23 +95,25 @@ void get_left( int id, int i ){
         else if ( data == 1 ) phils[i].has_left = -1;
         if ( phils[i].has_left == 0 ) free_chop = 1;
     }
+    
     //pick up chopstick
     phils[i].has_left = 1;
+    
     //send got chopstick
     write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " has left chopstick!!\n", 24);
     write_channel( phils[ i ].chan_left, 0, 1); // right taken is the msg 
 }
 
-//need to check some stuff about the strings I send 
+ 
 void right_put( int id, int i){
-    phils[i].left_chopstick = 0;
+    phils[i].has_right = 0;
     write(0, "Philosopher: ", 13); write_numb(i+1); write(0, " right chopstick on table!!\n", 32);
     //send msg through channel
     write_channel( phils[ i ].chan_right, 1, 0); // left taken is the msg 
 }
 
 void left_put( int id, int i){
-    phils[i].right_chopstick = 0;
+    phils[i].has_left = 0;
     write(0, "Philosopher: ", 13); write_numb( i+1 ); write(0, " left chopstick on table!!\n", 32);
     //send msg through channel 
     write_channel( phils[ i ].chan_left, 0, 0); // right taken is the msg 
@@ -122,7 +128,7 @@ void guest( int id ){
         while( 1 ) {}
     }
     while ( phils[ i ].hungry == 0 ){
-        //think( id, i);                // this has a timer of some sorts -- ask if they should think or not 
+        think( id, i);                // this has a timer of some sorts -- ask if they should think or not 
         hungry_philo( id, i );
         get_right( id, i );
         get_left( id, i );
@@ -154,16 +160,9 @@ void init_phils( int philo_1, int philo_2, int philo_3, int philo_4, int philo_5
     phils[4].chan_left       = chan4_5;
 
     for ( int i = 0; i<5; i++ ){
-        int right_chopstick = i + 1;
-        int left_chopstick  = i - 1;
-        
-        if ( left_chopstick == -1 )left_chopstick = 5;  
-        
         phils[i].hungry          = 0;
         phils[i].has_right       = 0;
         phils[i].has_left        = 0; 
-        phils[i].left_chopstick  = left_chopstick;
-        phils[i].right_chopstick = right_chopstick;
     }
 }
 
@@ -208,13 +207,8 @@ void Table( int currentId ) {
     // Stop it from forking again 
     before_forks = -1;  
 
-    //wait();
     // Seat the guests at the table and start 
     guest( ctrl );
-    // exit + give control to other process
-    //exit();
-    //termination msg before_forks exiting the final philosopher process
-    // ctrl should now be given back to the terminal 
 }
 
 void (*entry_Philosophers)() = &Table;
@@ -223,6 +217,3 @@ void (*entry_Philosophers)() = &Table;
 * channels to write to must be:  
 * channels to read from must be: 
 */
-
-
-// unable the timer for this and then enable it again when the whole thing is done
