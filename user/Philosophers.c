@@ -19,20 +19,6 @@ int stop_hungry( int hungry ){
     return 1; 
 }
 
-// This is used for timers
-// uint32_t generateRandom(){
-//     uint32_t random_array[5];
-//     random_array[0] = 0x00000100;
-//     random_array[1] = 0x00100010;
-//     random_array[2] = 0x00000001;
-//     random_array[3] = 0x01000010;
-//     random_array[4] = 0x00090100;
-
-//     uint32_t x = random_array[ rand() % 5];
-//     return x;
-// }
-
-
 void eat( int id, int i ){
     //uint32_t eat_Time = s);
     //sleep( i, eat_Time); // time to eat  -- should have some place where I say I eat // enable timr again did ypu disable them before 
@@ -47,8 +33,8 @@ void think( int id, int i ){
     //uint32_t counter = 0;
     //while ( counter < think_time) { counter ++ ;}
     write(0, "Philosopher:  " , 13); write_numb(i + 1); write(0, " is thinking \n", 14);
-    //int think_time = sleepTime();
     //sleep( i, 29 ); 
+    //int think_time = sleepTime();
 }
 
 

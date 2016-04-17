@@ -6,9 +6,6 @@ void 	age_process(); 												// age current process
 void 	scheduler ( ctx_t* ctx 			); 							// priority scheduler
 void 	write_error( char* error_msg, int size); 					// write error msg
 
-void launch_timer1();
-
-
 int 	pcbs_info(); 												// get pcbs information
 int 	get_numb_live_pcb(); 										// get number of used pcbs
 int 	get_ipc_slot(); 											// get an empty slot for ipc
@@ -165,91 +162,7 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 			ipc[ chan_id ].channels[chopstick] = taken;
 			break;
 		}
-		case 10 :{ // int sleep ( int i )
-			int timer_id = ( int )(ctx -> gpr[0]);
-			uint32_t sleep_time = (uint32_t)(ctx -> gpr[1]);
-
-			switch ( timer_id ){
-				case 0x00:{
-					break;
-				}
-				case 0x01:{
-					break;
-				}
-				case 0x02:{
-					//launch_timer1();
-
-					break;
-				}
-				case 0x03:{
-					//launch_timer2();
-					break;
-				}
-				case 0x04:{
-					//irq_enable();
-					//GICD0->ISENABLER[ 1 ] |= 0x00000000;
-					//TIMER1 -> Timer1IntClr 	= 0x01;
-					//launch_timer1();
-					//irq_enable();
-					while( awake[1] != 1 ) {write(0,"sleeping\n", 9);}
-					break;
-				}
-				default :{
-					break;
-				}
-			}
-			// //irq_unable();
-			// //init_timer();
-			// switch( timer_id ){
-			// 	case 0x00 :{
-			// 		TIMER3 -> Timer1Load = 0x00000010;
-			// 		write(0, "Asleep 0_2 \n", 12);
-			// 		while( !awake[0] ){ /*wait till done sleeping*/ }
-			// 		awake[0] = 0;
-			// 		write(0, "Awake 0_2 \n", 12);
-			// 		break;
-			// 	}
-			// 	case 0x01:{
-			// 		TIMER1 -> Timer1Load = 0x00000100;
-			// 		write(0, "Asleep 1_1 \n", 11);
-			// 		while( !awake[1] ){ }
-			// 		awake[1] = 0;
-			// 		write(0, "Awake 1_1 \n", 11);
-			// 		break;
-			// 	}
-			// 	case 0x02 :{
-			// 		TIMER1 -> Timer2Load = 0x00000010;
-			// 		write(0, "Asleep 1_2 \n", 11);
-			// 		while( !awake[2] ){ }
-			// 		awake[2] = 0;
-			// 		write(0, "Awake 1_2 \n", 11);
-			// 		break;
-			// 	}
-			// 	case 0x03:{
-			// 		TIMER2 -> Timer1Load = 0x00000010;
-			// 		write(0, "Asleep 2_1 \n", 11);
-			// 		while( !awake[3] ){ }
-			// 		awake[3] = 0;
-			// 		write(0, "Awake 2_1 \n", 11);
-			// 		break;
-			// 	}
-			// 	case 0x04:{
-			// 		TIMER3 -> Timer1Load = 0x00000001;
-			// 		write(0, "Asleep 2_2 \n", 12);
-			// 		while( !awake[4] ){ }
-			// 		awake[4] = 0;
-			// 		write(0, "Awake 2_2 \n", 12)	;
-			// 		break;
-			// 	}
-			// 	default : {
-			// 		char* error_msg = " -- timer id -- \n";
-			// 		write_error( error_msg, 17);
-			// 		break;
-			// 	}
-			// }	
-			break;
-		}
-		case 11 :{
+		case 10 :{
 			int chan_id = ( int )(ctx -> gpr[0]);
 			memset(&ipc[ chan_id ], -1, sizeof(ipc_t));
 			break;
@@ -266,87 +179,21 @@ void kernel_handler_svc( ctx_t* ctx, uint32_t id ){
 void kernel_handler_irq( ctx_t* ctx 		){
 	// Read interrupt Id
 	uint32_t id = GICC0 -> IAR;
-	uint32_t id1 = GICC1 -> IAR;
-	int timer = -1;
+
 	// Handle interrupt then reset Timer
 	if ( id == GIC_SOURCE_TIMER0 ) {
-			age_Time +=1 ;
-			
-			if ( age_Time >= max_Age ) {
-				age_process();
-				age_Time = 0;
-			} 
+		age_Time +=1 ;
+		
+		if ( age_Time >= max_Age ) {
+			age_process();
+			age_Time = 0;
+		} 
 
-			scheduler( ctx ); 
-			TIMER0 -> Timer1IntClr = 0x01;
-			timer = 0;
+		scheduler( ctx ); 
+		TIMER0 -> Timer1IntClr = 0x01;
 	}
-	if ( id1 == GIC_SOURCE_TIMER1 ){
-		//if ( TIMER1 -> Timer1Value == 0x00 ) { 		// case philo[1]
-			// Wake up process
-			awake[1] = 1;
-			write(0, "awake bitch!\n", 14);
-			//Timer reset
-			TIMER1 -> Timer1IntClr 	= 0x01;     // reset timer for when I want to use it again 
-			//TIMER1 -> Timer1Ctrl 	= 0x00000000; // this unables the timer 
-		//}
-	}
-	// 	else if ( TIMER1 -> Timer2Value == 0x00 ) { //case philo[2]
-	// 		// Wake up process
-	// 		awake[2] = 1;
-	// 		yield( ipc[2].chan_start );
-	// 		// Timer reset
-	// 		TIMER1 -> Timer2IntClr 	= 0x01;     // reset timer for when I want to use it again 
-	// 		TIMER1 -> Timer2Ctrl 	= 0x00000000; // this unables the timer 
-	// 	}
-	// }
-	// else if ( id == GIC_SOURCE_TIMER2 ){
-	// 	if ( TIMER2 -> Timer1Value == 0x00 ) { 		// case philo[3]
-	// 		// Wake up process
-	// 		awake[3] = 1;
-	// 		yield( ipc[3].chan_start );
-	// 		// Timer reset
-	// 		//TIMER2 -> Timer1IntClr 	= 0x01;     // reset timer for when I want to use it again 
-	// 		//TIMER2 -> Timer1Ctrl 	= 0x00000000; // this unables the timer 
-	// 	}
-	// 	else if ( TIMER2 -> Timer2Value == 0x00 ) { //case philo[4]
-	// 		// Wake up process
-	// 		awake[4] = 1;
-	// 		yield( ipc[4].chan_start );
-	// 		// Timer reset
-	// 		TIMER2 -> Timer2IntClr 	= 0x01;     // reset timer for when I want to use it again 
-	// 		TIMER2 -> Timer2Ctrl 	= 0x00000000; // this unables the timer 
-	// 	}
-	// }
-	// else if ( id == GIC_SOURCE_TIMER3 ){
-	// 	// Wake up process
-	// 	awake[0] = 1;
-	// 	yield( ipc[0].chan_start );
-	// 	// Timer reset
-	// 	TIMER3 -> Timer1IntClr 	= 0x01;     // reset timer for when I want to use it again 
-	// 	TIMER3 -> Timer1Ctrl 	= 0x00000000; // this unables the timer 
-	// }
 
-	// Signal that we are done
-	if (timer == 0 )GICC0 -> EOIR = id;
-	else if (timer == 1)GICC1 -> EOIR = id1;
-}
-
-void launch_timer1() {
-	TIMER1->Timer1Load     = 0x00000010; // select period = 2^20 ticks ~= 1 sec  
-  	TIMER1->Timer1Ctrl     = 0x00000002; // select 32-bit   timer
-  	TIMER1->Timer1Ctrl    |= 0x00000040; // select periodic timer
-  	TIMER1->Timer1Ctrl    |= 0x00000020; // enable          timer interrupt
-  	TIMER1->Timer1Ctrl    |= 0x00000080; // enable          TIMER0Ctrl
-
-  	GICC1->PMR             = 0x000000F0; // unmask all            interrupts
-  	GICD1->ISENABLER[ 1 ] |= 0x00000010; // enable timer          interrupt
-  	GICC1->CTLR            = 0x00000001; // enable GIC interface
-  	GICD1->CTLR            = 0x00000001; // enable GIC distributor
-}
-
-void launch_timer2(){
-
+	GICC0 -> EOIR = id;
 }
 
 // Initialise timer

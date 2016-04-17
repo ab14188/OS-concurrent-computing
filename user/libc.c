@@ -110,22 +110,22 @@ int write_channel( int channel_id, int chopstick , int taken ){
   return r;
 }
 
-int sleep( int timer_id, uint32_t sleep_time ){
-  int r;
-  asm volatile( "mov r0, %1 \n"
-                "mov r1, %2 \n"
-                "svc #10    \n"
-                "mov %0, r0 \n"
-                : "=r" (r)
-                : "r" (timer_id), "r" (sleep_time)
-                : "r0", "r1");
-  return r;
-}
+// int sleep( int timer_id, uint32_t sleep_time ){
+//   int r;
+//   asm volatile( "mov r0, %1 \n"
+//                 "mov r1, %2 \n"
+//                 "svc #10    \n"
+//                 "mov %0, r0 \n"
+//                 : "=r" (r)
+//                 : "r" (timer_id), "r" (sleep_time)
+//                 : "r0", "r1");
+//   return r;
+// }
 
 int delete_channel( int channel_id ){
   int r;
   asm volatile( "mov r0, %1 \n"
-                "svc #11     \n"
+                "svc #10     \n"
                 "mov %0, r0 \n"
                 : "=r" (r)
                 : "r" (channel_id)
